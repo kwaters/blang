@@ -4,3 +4,4 @@ from . import ast
 from . import lexer
 from . import parser
 from . import util
+from . import vm

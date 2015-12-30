@@ -174,6 +174,7 @@ def p_binop(p):
     rv8 : rv8 '&' rv7
     rv9 : rv9 '|' rv8
     """
+    # XOR is added in the H0670 version
     p[0] = BinOp(p[2], p[1], p[3])
 
 def p_binop_eq(p):
