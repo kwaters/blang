@@ -203,7 +203,7 @@ def alloca(vm, size):
 @instruction(0x31, imm=True)
 def local(vm, addr):
     """..., addr -> ..., bp + addr"""
-    vm.stack.push(vm.bp + addr)
+    vm.stack.append(vm.bp + addr)
 
 # Operators
 @instruction(0x40)
@@ -243,9 +243,9 @@ def binop(vm, subop):
     """..., a, b -> ..., a <op> b"""
     rhs = vm.stack.pop()
     lhs = vm.stack[-1]
-    vm.stack[-1] = binop_ops[subop].func(lhs, rhs)
+    vm.stack[-1] = binops[subop].func(lhs, rhs)
 
-@instruction(0x42, subop=True)
+@instruction(0x43, subop=True)
 def prim(vm):
     """Execute a primitive python function.
 
