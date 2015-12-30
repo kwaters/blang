@@ -54,22 +54,37 @@ class VM(object):
         self.ir = 0
         self._build_run_tables()
 
-    instructions = []
+    # List of instructions supported by this VM.
     _instructions_dirty = True
-    _run = {}
-    _runi = {}
+    instructions = []
 
     @classmethod
     def _build_run_tables(cls):
-        """Build fast access table to instruction run methods."""
+        """Build fast access tables to instructions."""
+        instruction_table = {}
         run, runi = {}, {}
         for instruction in cls.instructions:
             assert instruction.opcode not in run, "Duplicate opcode."
+            instruction_table[instruction.opcode] = instruction
             run[instruction.opcode] = instruction.run
             runi[instruction.opcode] = instruction.runi
 
         cls._instructions_dirty = False
+        cls._instruction_table = instruction_table
         cls._run, cls._runi = run, runi
+
+    def disassemble(self, addr):
+        """Disassemble one instruction at "addr"."""
+        ir = self.core[addr]
+        try:
+            instruction = self._instruction_table[ir & self.OP_MASK]
+        except KeyError:
+            return 'Invalid Instruction. 0x{:08x}'.format(ir)
+
+        mnemonic = instruction.disassemble(ir)
+        if ir & self.I_MASK:
+            return '{} 0x{:x}'.format(mnemonic, self.core[addr + 1])
+        return mnemonic
 
     def step(self):
         """Run one instruction."""
@@ -83,6 +98,10 @@ class VM(object):
         else:
             self._run[opcode](self)
 
+    def trace(self):
+        print self.disassemble(self.pc)
+        self.step()
+
 
 class Instruction(object):
     """VM Instruction"""
@@ -91,6 +110,24 @@ class Instruction(object):
         self.run = run
         self.runi = runi
         self.mnemonic = mnemonic
+        self._subop_name = None
+
+    def disassemble(self, ir):
+        """Return a string representing 'ir'."""
+        assert (ir & VM.OP_MASK) == self.opcode
+
+        mnemonic = self.mnemonic
+        if self._subop_name is not None:
+            subop = (ir & VM.SUBOP_MASK) >> VM.SUBOP_SHIFT
+            mnemonic += '.' + self._subop_name(subop)
+        if ir & VM.I_MASK:
+            mnemonic += '.i'
+        return mnemonic
+
+    def subop_name(self, func):
+        """Attach a subop decode function."""
+        self._subop_name = func
+        return func
 
     @staticmethod
     def _runi_adaptor(run):
@@ -143,6 +180,7 @@ def instruction(opcode, imm=False, subop=False):
             run, runi = body, Instruction._runi_adaptor(body)
         instruction = Instruction(opcode, mnemonic, run, runi)
         VM.instructions.append(instruction)
+        return instruction
     return inner
 
 
@@ -253,6 +291,10 @@ def call(vm, nargs):
     # Jump and store return address
     vm.pc, vm.stack[-1] = vm.stack[-1], vm.pc
 
+@call.subop_name
+def call_subop_name(subop):
+    return str(subop)
+
 @instruction(0x22)
 def ret(vm):
     """..., retaddr, retval -> ...
@@ -328,6 +370,10 @@ def binop(vm, subop):
     rhs = vm.stack.pop()
     lhs = vm.stack[-1]
     vm.stack[-1] = binops[subop].func(lhs, rhs)
+
+@binop.subop_name
+def binop_subop_name(subop):
+    return binops[subop].name
 
 @instruction(0x43, subop=True)
 def prim(vm):
