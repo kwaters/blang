@@ -40,10 +40,82 @@ class VM(object):
     immediate form the instruction is followed by a word which is pushed onto
     the stack before the instruction is executed.
     """
-    pass
+    SUBOP_MASK = 0xff00
+    SUBOP_SHIFT = 8
+    I_MASK = 0x80
+    OP_MASK = 0x7f
+
+    def __init__(self):
+        self.core = 0x200 * [0]
+        self.stack = []
+        self.pc = 0
+        self.sp = 0x100
+        self.bp = 0x100
+        self.ir = 0
+        self._build_run_tables()
+
+    instructions = []
+    _instructions_dirty = True
+    _run = {}
+    _runi = {}
+
+    @classmethod
+    def _build_run_tables(cls):
+        """Build fast access table to instruction run methods."""
+        run, runi = {}, {}
+        for instruction in cls.instructions:
+            assert instruction.opcode not in run, "Duplicate opcode."
+            run[instruction.opcode] = instruction.run
+            runi[instruction.opcode] = instruction.runi
+
+        cls._instructions_dirty = False
+        cls._run, cls._runi = run, runi
+
+    def step(self):
+        """Run one instruction."""
+        self.ir = ir = self.core[self.pc]
+        self.pc += 1
+        opcode = ir & self.OP_MASK
+        if ir & self.I_MASK:
+            imm = self.core[self.pc]
+            self.pc += 1
+            self._runi[opcode](self, imm)
+        else:
+            self._run[opcode](self)
 
 
-# Placeholder decorator for defining opcodes
+class Instruction(object):
+    """VM Instruction"""
+    def __init__(self, opcode, mnemonic, run, runi):
+        self.opcode = opcode
+        self.run = run
+        self.runi = runi
+        self.mnemonic = mnemonic
+
+    @staticmethod
+    def _runi_adaptor(run):
+        """Convert a 'run' function into a 'runi' function."""
+        def runi(vm, imm):
+            vm.stack.append(imm)
+            run(vm)
+        return runi
+
+    @staticmethod
+    def _run_adaptor(runi):
+        """Convert a 'runi' function into a 'run' function."""
+        def run(vm):
+            runi(vm, vm.stack.pop())
+        return run
+
+    @staticmethod
+    def _subop_adaptor(run):
+        """Convert a subop 'run' function into a standard 'run' function."""
+        def inner(vm):
+            subop = (vm.ir & vm.SUBOP_MASK) >> vm.SUBOP_SHIFT
+            run(vm, subop)
+        return inner
+
+
 def instruction(opcode, imm=False, subop=False):
     """Define an instruction.
 
@@ -57,8 +129,20 @@ def instruction(opcode, imm=False, subop=False):
     If "subop" is True, this is the definition for an instruction that has a
     sub-opcode.  The sub-opcode will be passed into the instruction.
     """
-    def inner(x):
-        return x
+    assert not (imm and subop), "Not Implemented"
+    assert VM._instructions_dirty, (
+        "Instruction definition after VM construction")
+
+    def inner(body):
+        mnemonic = body.__name__
+        if subop:
+            body = Instruction._subop_adaptor(body)
+        if imm:
+            run, runi = Instruction._run_adaptor(body), body
+        else:
+            run, runi = body, Instruction._runi_adaptor(body)
+        instruction = Instruction(opcode, mnemonic, run, runi)
+        VM.instructions.append(instruction)
     return inner
 
 
