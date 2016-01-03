@@ -217,7 +217,7 @@ class ReturnStmt(Stmt):
 
     _show_fields = ['value']
 
-    def __init__(self, value):
+    def __init__(self, value=None):
         super(ReturnStmt, self).__init__()
         self.value = value
 
@@ -261,12 +261,14 @@ class WhileStmt(Stmt):
 
 
 class VariableStmt(Stmt):
-    __slots__ = ['variables']
+    __slots__ = ['extrn', 'variables']
 
+    _name = 'VariableStmt({0.extrn!r})'
     _show_fields = ['variables']
 
-    def __init__(self, variables):
+    def __init__(self, extrn, variables):
         super(VariableStmt, self).__init__()
+        self.extrn = extrn
         self.variables = variables
 
 

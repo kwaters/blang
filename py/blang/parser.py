@@ -61,14 +61,14 @@ def p_statement_case_label(p):
               | CASE CHARACTER ':' statement
     """
     p[0] = p[4]
-    p[0].attach_case(p[1])
+    p[0].attach_case(p[2])
 
 def p_statement_variable(p):
     """
     statement : AUTO auto_decl_list ';'
               | EXTRN extrn_decl_list ';'
     """
-    p[0] = VariableStmt(p[2])
+    p[0] = VariableStmt(p[1] == 'extrn', p[2])
 
 def p_statement_if(p):
     "statement : IF '(' expr ')' statement opt_else"
@@ -134,11 +134,11 @@ def p_lv0_vec(p):
 
 def p_post_inc(p):
     "rv1 : lv0 incdec"
-    p[0] = Inc(p[2], p[1], True)
+    p[0] = Inc(p[2], True, p[1])
 
 def p_pre_inc(p):
     "rv2 : incdec lv"
-    p[0] = Inc(p[2], p[1], False)
+    p[0] = Inc(p[1], False, p[2])
 
 def p_rv2_unary(p):
     "rv2 : unary_op rv2"
@@ -179,7 +179,7 @@ def p_binop(p):
 
 def p_binop_eq(p):
     "expr : lv ASSIGN expr"
-    p[0] = Assign('=', p[1], p[3])
+    p[0] = Assign(p[2], p[1], p[3])
 
 def p_expr_load(p):
     """

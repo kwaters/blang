@@ -46,13 +46,14 @@ class VM(object):
     OP_MASK = 0x7f
 
     def __init__(self):
-        self.core = 0x200 * [0]
+        self.core = 0x1000 * [0]
         self.stack = []
         self.pc = 0
         self.sp = 0x100
         self.bp = 0x100
         self.ir = 0
         self._build_run_tables()
+        self._prims = []
 
     # List of instructions supported by this VM.
     _instructions_dirty = True
@@ -86,6 +87,16 @@ class VM(object):
             return '{} 0x{:x}'.format(mnemonic, self.core[addr + 1])
         return mnemonic
 
+    def run(self):
+        """Execute instructions until run() is called."""
+        self._running = True
+        while self._running:
+            self.step()
+
+    def stop(self):
+        """Exit from run()."""
+        self._running = False
+
     def step(self):
         """Run one instruction."""
         self.ir = ir = self.core[self.pc]
@@ -98,19 +109,34 @@ class VM(object):
         else:
             self._run[opcode](self)
 
+    def disassemble_range(self, low, high):
+        out = []
+        pc = low
+        while pc < high:
+            out.append('{:4x} {}'.format(pc, self.disassemble(pc)))
+            pc += 2 if self.core[pc] & self.I_MASK else 1
+        return '\n'.join(out)
+
     def trace(self):
-        print self.disassemble(self.pc)
+        print '{0:4x} {1:20} bp={3} sp={4} s=[{2}]'.format(self.pc, self.disassemble(self.pc),
+            ' '.join('{:4x}'.format(x) for x in self.stack),
+            self.bp, self.sp)
         self.step()
+
+    def dpush(self, x):
+        self.sp -= 1
+        self.core[self.sp] = x
 
 
 class Instruction(object):
     """VM Instruction"""
-    def __init__(self, opcode, mnemonic, run, runi):
+    def __init__(self, opcode, mnemonic, run, runi, has_subop):
         self.opcode = opcode
         self.run = run
         self.runi = runi
         self.mnemonic = mnemonic
         self._subop_name = None
+        self.has_subop = has_subop
 
     def disassemble(self, ir):
         """Return a string representing 'ir'."""
@@ -178,7 +204,7 @@ def instruction(opcode, imm=False, subop=False):
             run, runi = Instruction._run_adaptor(body), body
         else:
             run, runi = body, Instruction._runi_adaptor(body)
-        instruction = Instruction(opcode, mnemonic, run, runi)
+        instruction = Instruction(opcode, mnemonic, run, runi, subop)
         VM.instructions.append(instruction)
         return instruction
     return inner
@@ -244,7 +270,7 @@ def const(vm):
 @instruction(0x20, imm=True)
 def jmp(vm, addr):
     """..., addr -> ... | pc := pc + addr"""
-    vm.pc += vm.stack.pop()
+    vm.pc += addr
 
 @instruction(0x21, subop=True)
 def call(vm, nargs):
@@ -341,7 +367,7 @@ def load(vm):
 def store(vm):
     """..., a, b -> ... | *a := b"""
     value = vm.stack.pop()
-    addr = vm.stack.pop
+    addr = vm.stack.pop()
     vm.core[addr] = value
 
 BinOp = collections.namedtuple('BinOp', ['name', 'func'])
@@ -375,10 +401,20 @@ def binop(vm, subop):
 def binop_subop_name(subop):
     return binops[subop].name
 
+_prims = []
+
 @instruction(0x43, subop=True)
-def prim(vm):
+def prim(vm, subop):
     """Execute a primitive python function.
 
     Used to implement the B runtime.
     """
-    assert False, "Not Implemented"
+    _prims[subop][1](vm)
+
+@prim.subop_name
+def prim_subop_name(subop):
+    return _prims[subop][0]
+
+def add_prim(name, func):
+    _prims.append((name, func))
+    return len(_prims) - 1
