@@ -114,6 +114,49 @@ class TestInstructions(unittest.TestCase):
         self.assertEqual(self.vm.bp, 117)
         self.assertEqual(self.vm.sp, 127)
 
+    def test_call_ret(self):
+        b = self.b
+        vm = self.vm
+
+        target = b.const_i()
+        b.const_i(7)
+        b.const_i(11)
+        b.call(2)
+        after = b.ip
+
+        # Add buffer space before the function body.
+        b.data(16)
+
+        # Function body
+        body = b.ip
+        b.const_i(4)
+        b.ret()
+
+        # Patch
+        b[target] = body
+
+        vm.load(self.b.core(), 32, 16)
+        vm.sp -= 3
+
+        oldsp, oldbp = vm.sp, vm.bp
+
+        # Call Function
+        vm.step()
+        vm.step()
+        vm.step()
+        vm.step()
+        self.assertEqual(vm.pc, body)
+        self.assertNotEqual(vm.sp, oldsp)
+        self.assertNotEqual(vm.bp, oldbp)
+
+        # Return
+        vm.step()
+        vm.step()
+        self.assertEqual(vm.pc, after)
+        self.assertEqual(vm.sp, oldsp)
+        self.assertEqual(vm.bp, oldbp)
+        self.assertEqual(vm.stack, [4])
+
     def test_jez_zero(self):
         self.push(0, 7)
         self.b.jez()
