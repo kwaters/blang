@@ -10,6 +10,8 @@ setup(
 
     license='MIT',
 
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests']),
     install_requires = [],
+
+    test_suite = 'tests.suite'
 )
