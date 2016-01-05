@@ -105,11 +105,12 @@ class VM(object):
 
 class Instruction(object):
     """VM Instruction"""
-    def __init__(self, opcode, mnemonic, run, runi):
+    def __init__(self, opcode, mnemonic, run, runi, has_subop):
         self.opcode = opcode
         self.run = run
         self.runi = runi
         self.mnemonic = mnemonic
+        self.has_subop = has_subop
         self._subop_name = None
 
     def disassemble(self, ir):
@@ -178,7 +179,7 @@ def instruction(opcode, imm=False, subop=False):
             run, runi = Instruction._run_adaptor(body), body
         else:
             run, runi = body, Instruction._runi_adaptor(body)
-        instruction = Instruction(opcode, mnemonic, run, runi)
+        instruction = Instruction(opcode, mnemonic, run, runi, subop)
         VM.instructions.append(instruction)
         return instruction
     return inner
