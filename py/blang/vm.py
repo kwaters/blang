@@ -3,6 +3,8 @@
 import collections
 import operator
 
+import numpy as np
+
 
 class VM(object):
     """Virtual machine for the B language
@@ -46,17 +48,19 @@ class VM(object):
     OP_MASK = 0x7f
 
     def __init__(self):
-        self.core = 0x200 * [0]
+        self.load(np.array([], dtype=np.int32), 0, 0)
         self.stack = []
-        self.pc = 0
-        self.sp = 0x100
-        self.bp = 0x100
-        self.ir = 0
+        self.ir = None
         self._build_run_tables()
 
     # List of instructions supported by this VM.
     _instructions_dirty = True
     instructions = []
+
+    def load(self, core, pc, sp):
+        self.core = core
+        self.pc = np.int32(pc)
+        self.sp = self.bp = np.int32(sp)
 
     @classmethod
     def _build_run_tables(cls):
@@ -101,6 +105,10 @@ class VM(object):
     def trace(self):
         print self.disassemble(self.pc)
         self.step()
+
+    def dpush(self, x):
+        self.sp -= 1
+        self.core[self.sp] = x
 
 
 class Instruction(object):
@@ -245,7 +253,7 @@ def const(vm):
 @instruction(0x20, imm=True)
 def jmp(vm, addr):
     """..., addr -> ... | pc := pc + addr"""
-    vm.pc += vm.stack.pop()
+    vm.pc += addr
 
 @instruction(0x21, subop=True)
 def call(vm, nargs):
@@ -342,7 +350,7 @@ def load(vm):
 def store(vm):
     """..., a, b -> ... | *a := b"""
     value = vm.stack.pop()
-    addr = vm.stack.pop
+    addr = vm.stack.pop()
     vm.core[addr] = value
 
 BinOp = collections.namedtuple('BinOp', ['name', 'func'])
