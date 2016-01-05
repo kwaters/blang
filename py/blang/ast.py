@@ -289,3 +289,22 @@ class SwitchStmt(Stmt):
         super(SwitchStmt, self).__init__()
         self.expr = expr
         self.body = body
+
+
+class AstVisitor(object):
+    """Base class for AST traversal."""
+
+    def visit(self, node, *args, **kwargs):
+        """Call to apropriate visit_() method."""
+        assert isinstance(node, Node)
+
+        for cls in node.__class__.__mro__:
+            name = 'visit_' + cls.__name__
+            if hasattr(self, name):
+                break
+        method = getattr(self, name)
+        return method(node, *args, **kwargs)
+
+    def visit_Node(self, node, *args, **kwargs):
+        """Visit generic AST node."""
+        assert False, "Unhandled node type {}.".format(node.__class__.__name__)
