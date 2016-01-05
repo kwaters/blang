@@ -104,8 +104,10 @@ class SymbolTable(object):
     def add_auto(self, name):
         # TODO: Error
         assert name not in self.symbols
-        self.symbols[name] = Symbol(name, 'local', -self.auto_count - 1)
         self.auto_count += 1
+        sym = Symbol(name, 'local', -self.auto_count)
+        self.symbols[name] = sym
+        return sym.addr
 
     def add_label(self, name, ref):
         if name in self.symbols:
@@ -243,7 +245,8 @@ class Compiler(object):
             # Allocate the array on the stack, and write it's address into the
             # variable.
             b.local_i(offset)
-            b.alloca_i(var.size + 1)
+            # TODO: Size of array
+            b.alloca_i(var.size)
             b.store()
 
     def visit_Number(self, b, num):
@@ -284,6 +287,8 @@ class Compiler(object):
         for label in self.patch_labels:
             sym = self.symtab.fetch(label[0])
             b.patch(label[1], sym.addr, rel=True)
+
+        print self.symtab.symbols
 
     def visit_Stmt(self, b, stmt):
         for case in stmt.cases:
