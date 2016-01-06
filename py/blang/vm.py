@@ -2,9 +2,14 @@
 
 import collections
 import operator
+import struct
 
 import numpy as np
 
+
+class VMError(Exception):
+    """A terminal VM error."""
+    pass
 
 class VM(object):
     """Virtual machine for the B language
@@ -52,6 +57,7 @@ class VM(object):
         self.stack = []
         self.ir = None
         self._build_run_tables()
+        self._prims = {}
 
     # List of instructions supported by this VM.
     _instructions_dirty = True
@@ -109,6 +115,24 @@ class VM(object):
     def dpush(self, x):
         self.sp -= 1
         self.core[self.sp] = x
+
+    def add_prim(self, code, func):
+        """Register a primitive function.
+
+        "code" may be a number or a FourCC.  "func" should have a signature of
+        "func(vm, arg)".
+
+        "arg" is arbitrary but it is suggested that it is a pointer to an
+        argument structure.
+        """
+        if isinstance(code, basestring):
+            code = struct.unpack('<i', struct.pack('<4s', code))[0]
+        self._prims[np.int32(code)] = func
+
+    def prim(self, code, arg):
+        if not code in self._prims:
+            raise VMError('Invalid prim', code)
+        self._prims[code](self, arg)
 
 
 class Instruction(object):
@@ -384,10 +408,14 @@ def binop(vm, subop):
 def binop_subop_name(subop):
     return binops[subop].name
 
-@instruction(0x43, subop=True)
+@instruction(0x43)
 def prim(vm):
     """Execute a primitive python function.
 
     Used to implement the B runtime.
+
+    ..., code, arg -> ...
     """
-    assert False, "Not Implemented"
+    arg = vm.stack.pop()
+    code = vm.stack.pop()
+    vm.prim(code, arg)

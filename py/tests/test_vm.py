@@ -208,3 +208,21 @@ class TestInstructions(unittest.TestCase):
         self.push(6, 9)
         self.b.binop('*')
         self.step([54])
+
+    def test_prim_bad(self):
+        self.push(0, 0)
+        self.b.prim()
+        with self.assertRaises(vm.VMError):
+            self.step([])
+
+    def test_prim(self):
+        ret = [0]
+        def check(vm, arg):
+            ret[0] = arg
+
+        self.vm.add_prim('chk', check)
+        self.push(0x6b6863, 17)
+        self.b.prim()
+        self.step([])
+
+        self.assertEqual(ret[0], 17)
