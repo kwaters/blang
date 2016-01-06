@@ -61,7 +61,7 @@ def p_statement_case_label(p):
               | CASE CHARACTER ':' statement
     """
     p[0] = p[4]
-    p[0].attach_case(p[1])
+    p[0].attach_case(p[2])
 
 def p_statement_variable(p):
     """
@@ -134,11 +134,11 @@ def p_lv0_vec(p):
 
 def p_post_inc(p):
     "rv1 : lv0 incdec"
-    p[0] = Inc(p[2], p[1], True)
+    p[0] = Inc(p[2], True, p[1])
 
 def p_pre_inc(p):
     "rv2 : incdec lv"
-    p[0] = Inc(p[2], p[1], False)
+    p[0] = Inc(p[1], False, p[2])
 
 def p_rv2_unary(p):
     "rv2 : unary_op rv2"
@@ -179,7 +179,7 @@ def p_binop(p):
 
 def p_binop_eq(p):
     "expr : lv ASSIGN expr"
-    p[0] = Assign('=', p[1], p[3])
+    p[0] = Assign(p[2], p[1], p[3])
 
 def p_expr_load(p):
     """
@@ -225,6 +225,7 @@ def p_list_base(p):
     ival_list :
     statement_list :
     auto_decl_list : auto_decl
+    extrn_decl_list : extrn_decl
     arglist : expr
     """
     p[0] = p[1:]
@@ -234,6 +235,7 @@ def p_list_append(p):
     program : program definition
     ival_list : ival_list ',' ival
     auto_decl_list : auto_decl_list ',' auto_decl
+    extrn_decl_list : extrn_decl_list ',' extrn_decl
     statement_list : statement_list statement
     arglist : arglist ',' expr
     """
@@ -243,14 +245,12 @@ def p_list_append(p):
 def p_name_list_base(p):
     """
     arg_list_decl : NAME
-    extrn_decl_list : NAME
     """
     p[0] = [p[1].name]
 
 def p_name_list_append(p):
     """
     arg_list_decl : arg_list_decl ',' NAME
-    extrn_decl_list : extrn_decl_list ',' NAME
     """
     p[0] = p[1]
     p[0].append(p[3].name)
@@ -270,6 +270,10 @@ def p_auto_decl(p):
 def p_auto_decl_vec(p):
     "auto_decl : NAME '[' NUMBER ']'"
     p[0] = Variable(p[1].name, True, p[3])
+
+def p_extrn_decl(p):
+    "extrn_decl : NAME"
+    p[0] = Variable(p[1].name, False)
 
 def p_ival(p):
     """
