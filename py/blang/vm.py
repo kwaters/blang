@@ -58,6 +58,7 @@ class VM(object):
         self.ir = None
         self._build_run_tables()
         self._prims = {}
+        self._exit = None
 
     # List of instructions supported by this VM.
     _instructions_dirty = True
@@ -107,6 +108,20 @@ class VM(object):
             self._runi[opcode](self, imm)
         else:
             self._run[opcode](self)
+
+    def run(self):
+        """Run until stop() is called."""
+        self._exit = None
+        while self._exit is not None:
+            self.step()
+        return self._exit
+
+    def stop(self, retval=0):
+        """Exit run().
+
+        run() will return retval.
+        """
+        self._exit = retval
 
     def trace(self):
         print self.disassemble(self.pc)
