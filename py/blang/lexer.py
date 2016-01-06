@@ -141,9 +141,9 @@ def t_CHARACTER(t):
     s = unescape(t.value[1:-1])
     x, shift = 0, 0
     for c in s[:4]:
-        x = (x << shift) | ord(c)
+        print ord(c), x, hex(x), shift
+        x = x | (ord(c) << shift)
         shift += 8
-
     t.value = x
     return t
 
