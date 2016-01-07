@@ -50,6 +50,8 @@ class IBuilder(IBuilderBase):
     def __init__(self):
         self._core = np.zeros(32, dtype=np.int32)
         self.ip = 0
+        self._relocations = []
+        self._extrns = {}
 
     _binop_subop = {
         _binop_symbols[binop.name]: subopcode
@@ -83,6 +85,7 @@ class IBuilder(IBuilderBase):
 
         Returns the address of the vector.
         """
+        assert False, "Broken"
         r = self.ip
         self.ip += length
         return r
@@ -90,6 +93,18 @@ class IBuilder(IBuilderBase):
     def core(self):
         """Return a trimed core image."""
         return self._core[:self.ip]
+
+    def define_extrn(self, name):
+        """Define an extern at the current ip."""
+        self._extrns[name] = self.ip
+
+    def relocation(self, name, addr):
+        """Add the value of "name" to core[addr] as link time."""
+        self._relocations.append((name, addr))
+
+    def link(self):
+        for name, addr in self._relocations:
+            self[addr] += self._extrns[name]
 
     # Override with symbolic sub-op names.
     def binop(self, op):

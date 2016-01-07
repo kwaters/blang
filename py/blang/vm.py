@@ -84,6 +84,16 @@ class VM(object):
         cls._instruction_table = instruction_table
         cls._run, cls._runi = run, runi
 
+
+    def disassemble_range(self, low, high):
+        out = []
+        pc = low
+        while pc < high:
+            out.append('{:4x} {}'.format(pc, self.disassemble(pc)))
+            pc += 2 if self.core[pc] & self.I_MASK else 1
+        return '\n'.join(out)
+
+
     def disassemble(self, addr):
         """Disassemble one instruction at "addr"."""
         ir = self.core[addr]
@@ -112,7 +122,7 @@ class VM(object):
     def run(self):
         """Run until stop() is called."""
         self._exit = None
-        while self._exit is not None:
+        while self._exit is None:
             self.step()
         return self._exit
 
@@ -125,6 +135,11 @@ class VM(object):
 
     def trace(self):
         print self.disassemble(self.pc)
+        self.step()
+    def trace(self):
+        print '{0:4x} {1:20} bp={3} sp={4} s=[{2}]'.format(self.pc, self.disassemble(self.pc),
+            ' '.join('{:4x}'.format(x) for x in self.stack),
+            self.bp, self.sp)
         self.step()
 
     def dpush(self, x):
