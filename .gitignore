@@ -1,5 +1,7 @@
 *.o
 *.yy.c
+*.tab.?
+*.output
 
 .sw?
 .*.sw?
