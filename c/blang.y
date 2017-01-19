@@ -1,10 +1,11 @@
 /* B parser */
 
 %{
-    typedef struct bstring_ {
-        char *s;
-        size_t len;
-    } bstring;
+    #include <stdint.h>
+    #include "ast.h"
+
+    extern void yyerror(char *);
+    extern int yylex(void);
 %}
 
 %union {

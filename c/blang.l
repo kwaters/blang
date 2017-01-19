@@ -61,6 +61,7 @@ static int parse_number(int base);
 "/*"    BEGIN(comment);
 <comment>{
     [^*]+
+    \*
     "*/"  BEGIN(INITIAL);
 }
 
@@ -84,7 +85,8 @@ static int parse_number(int base);
         yylval.number = char_lit;
         return CHAR;
     }
-    \n  abort();
+    . abort();
+    <<EOF>>  abort();
 }
 
  /* string literal */
@@ -105,6 +107,8 @@ static int parse_number(int base);
         yylval.str.s = string_buf;
         yylval.str.len = string_p - string_buf;
     }
+    . abort();
+    <<EOF>>  abort();
 }
 
  /* number */
@@ -114,7 +118,7 @@ static int parse_number(int base);
  /* keywords */
 auto    return AUTO;
 case    return CASE;
-else    return RETURN;
+else    return ELSE;
 extrn   return EXTRN;
 goto    return GOTO;
 if      return IF;
@@ -187,6 +191,7 @@ int yywrap()
     return 1;
 }
 
+#if 0
 int main()
 {
     char temp[] = " ";
@@ -224,3 +229,4 @@ int main()
         printf("token: %s (%d)\n", s, token);
     }
 }
+#endif
