@@ -71,3 +71,60 @@ stDummy(node) {
         ;
     }
 }
+
+stGet(kind) {
+}
+
+stRlse(node) {
+}
+
+stWalk(n, pre, post, data) {
+    auto n;
+
+    if (pre)
+        pre(n, data);
+
+    switch ((*n)[0]) {
+    case  1:  /* A_PROG */
+    case  2:  /* A_XDEF */
+    case  3:  /* A_FDEF */
+    case  4:  /* A_VAR */
+    case  5:  /* A_LABEL */
+    case  6:  /* A_SEQ */
+    case  7:  /* A_IFE */
+    case  8:  /* A_WHILE */
+    case  9:  /* A_SWITCH */
+    case 10:  /* A_GOTO */
+    case 11:  /* A_VRTRN */
+    case 12:  /* A_RTRN */
+    case 13:  /* A_EXPR */
+    case 14:  /* A_VOID */
+    case 15:  /* A_NAME */
+    case 16:  /* A_IND */
+    case 17:  /* A_INDEX */
+    case 18:  /* A_NUM */
+    case 19:  /* A_STR */
+    case 20:  /* A_ASSIGN */
+    case 21:  /* A_PRE */
+    case 22:  /* A_POST */
+    case 23:  /* A_UNARY */
+    case 24:  /* A_ADDR */
+    case 25:  /* A_BIN */
+    case 26:  /* A_COND */
+    case 27:  /* A_CALL */
+        ;
+    }
+break:
+
+    if (post)
+        post(n, data);
+}
+
+stShPre(node, data) {
+}
+stShPost(node, data) {
+}
+
+/* Debug printout of a syntax tree. */
+stShow(node) {
+}
