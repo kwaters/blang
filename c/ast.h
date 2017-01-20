@@ -181,6 +181,7 @@ struct AstNum {
 };
 struct AstStr {
     AstKind kind;
+    /* TODO */
 };
 struct AstAssign {
     AstKind kind;
@@ -216,8 +217,8 @@ struct AstBin {
 struct AstCond {
     AstKind kind;
     union Ast *cond;
-    union Ast *lhs;
-    union Ast *rhs;
+    union Ast *yes;
+    union Ast *no;
 };
 struct AstCall {
     AstKind kind;
@@ -261,4 +262,5 @@ void ast_walk(union Ast **node, AstWalkFunc pre, AstWalkFunc post, void *data);
 void ast_show(union Ast *root);
 union Ast *ast_get(AstKind kind);
 void ast_release(union Ast *node);
-
+void ast_release_recursive(union Ast *ast);
+union Ast *ast_binop(union Ast *lhs, union Ast *rhs, I op);

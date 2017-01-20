@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "vector.h"
 
@@ -98,8 +99,8 @@ static void ast_walk_impl(union Ast **node)
         break;
     case A_COND:
         ast_walk_impl(&n->cond.cond);
-        ast_walk_impl(&n->cond.lhs);
-        ast_walk_impl(&n->cond.rhs);
+        ast_walk_impl(&n->cond.yes);
+        ast_walk_impl(&n->cond.no);
         break;
     case A_CALL:
         ast_walk_impl(&n->call.function);
@@ -139,15 +140,22 @@ union Ast *ast_get(AstKind kind)
 
     ast->kind = kind;
 
+    /* In the B version allocate the vector here. */
+
+    return ast;
+}
+
+void ast_release(union Ast *ast)
+{
     switch (ast->kind) {
     case A_PROG:
-        ast->prog.definitions = vector_get();
+        vector_release(ast->prog.definitions);
         break;
     case A_XDEF:
         /* TODO */
         break;
     case A_FDEF:
-        ast->fdef.arguments = vector_get();
+        vector_release(ast->fdef.arguments);
         break;
     case A_VAR:
         /* TODO */
@@ -156,14 +164,74 @@ union Ast *ast_get(AstKind kind)
         /* TODO */
         break;
     case A_SEQ:
-        ast->seq.statements = vector_get();
+        vector_release(ast->seq.statements);
         break;
     case A_CALL:
-        ast->call.arguments = vector_get();
+        vector_release(ast->call.arguments);
         break;
     default:
         ;
     }
 
+    free(ast);
+}
+
+static void ast_release_recursive_post(union Ast **ast, void *data)
+{
+    ast_release(*ast);
+}
+
+void ast_release_recursive(union Ast *ast)
+{
+    ast_walk(&ast, NULL, ast_release_recursive_post, NULL);
+}
+
+union Ast *ast_binop(union Ast *lhs, union Ast *rhs, I op)
+{
+    union Ast *ast = ast_get(A_BIN);
+    ast->bin.lhs = lhs;
+    ast->bin.rhs = rhs;
+    ast->bin.op = op;
     return ast;
+}
+
+static void ast_show_pre(union Ast **node, void *v) {
+    char *name[] = {
+        [A_PROG] = "PROG",
+        [A_XDEF] = "XDEF",
+        [A_FDEF] = "FDEF",
+        [A_VAR] = "VAR",
+        [A_LABEL] = "LABEL",
+        [A_SEQ] = "SEQ",
+        [A_IFE] = "IFE",
+        [A_WHILE] = "WHILE",
+        [A_SWITCH] = "SWITCH",
+        [A_GOTO] = "GOTO",
+        [A_VRTRN] = "VRTRN",
+        [A_RTRN] = "RTRN",
+        [A_EXPR] = "EXPR",
+        [A_VOID] = "VOID",
+        [A_NAME] = "NAME",
+        [A_IND] = "IND",
+        [A_INDEX] = "INDEX",
+        [A_NUM] = "NUM",
+        [A_STR] = "STR",
+        [A_ASSIGN] = "ASSIGN",
+        [A_PRE] = "PRE",
+        [A_POST] = "POST",
+        [A_UNARY] = "UNARY",
+        [A_ADDR] = "ADDR",
+        [A_BIN] = "BIN",
+        [A_COND] = "COND",
+        [A_CALL] = "CALL"
+    };
+    printf("{%s ", name[(*node)->kind]);
+}
+static void ast_show_post(union Ast **node, void *v) {
+    printf("}");
+}
+void ast_show(union Ast *root)
+{
+    ast_walk(&root, ast_show_pre, ast_show_post, NULL);
+    printf("\n");
 }

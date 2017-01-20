@@ -148,6 +148,7 @@ while   return WHILE;
 "==="    yylval.assign_op = EQ;     return ASSIGN;
 "=!="    yylval.assign_op = NEQ;    return ASSIGN;
 =[=|&-+%*/] {
+    /* TODO: This isn't right. */
     yylval.assign_op = yytext[0];
     return ASSIGN;
 }
