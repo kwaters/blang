@@ -10,6 +10,7 @@ struct Vector *vector_get_reserve(I capacity)
 {
     struct Vector *vector = malloc(sizeof(struct Vector) +
                                    sizeof(I) * (capacity - 1));
+    vector->size = 0;
     vector->capacity = capacity;
     return vector;
 }
