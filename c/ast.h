@@ -259,4 +259,6 @@ union Ast {
 typedef void (*AstWalkFunc)(union Ast **node, void *data);
 void ast_walk(union Ast **node, AstWalkFunc pre, AstWalkFunc post, void *data);
 void ast_show(union Ast *root);
+union Ast *ast_get(AstKind kind);
+void ast_release(union Ast *node);
 

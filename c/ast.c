@@ -1,5 +1,8 @@
 #include "ast.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "vector.h"
 
 static AstWalkFunc ast_pre_func;
@@ -127,4 +130,40 @@ void ast_walk(union Ast **node, AstWalkFunc pre_func, AstWalkFunc post_func, voi
     ast_post_func = post_func;
     ast_data = data;
     ast_walk_impl(node);
+}
+
+union Ast *ast_get(AstKind kind)
+{
+    union Ast *ast = malloc(sizeof(union Ast));
+    memset(ast, 0, sizeof(union Ast));
+
+    ast->kind = kind;
+
+    switch (ast->kind) {
+    case A_PROG:
+        ast->prog.definitions = vector_get();
+        break;
+    case A_XDEF:
+        /* TODO */
+        break;
+    case A_FDEF:
+        ast->fdef.arguments = vector_get();
+        break;
+    case A_VAR:
+        /* TODO */
+        break;
+    case A_LABEL:
+        /* TODO */
+        break;
+    case A_SEQ:
+        ast->seq.statements = vector_get();
+        break;
+    case A_CALL:
+        ast->call.arguments = vector_get();
+        break;
+    default:
+        ;
+    }
+
+    return ast;
 }
