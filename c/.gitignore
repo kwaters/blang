@@ -1,0 +1,5 @@
+*.yy.c
+*.tab.?
+*.output
+
+bc1
