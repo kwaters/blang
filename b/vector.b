@@ -28,10 +28,10 @@ vcGet() {
 vcGetR(cap) {
     auto v;
 
-    v = getvec(cap + 1) - 2;
+    v = getvec(cap + 1) + 2;
     v[-1] = 0;
     v[-2] = cap;
-    return (v + 2);
+    return (v);
 }
 
 /* Release a dynamically resizable vector. */
