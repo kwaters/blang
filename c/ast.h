@@ -118,8 +118,10 @@ struct AstFdef {
     struct Vector *arguments;
 };
 struct AstVar {
-    /* TODO */
     AstKind kind;
+    Ast *statement;
+    I isAuto;
+    struct Vector *variables;
 };
 struct AstLabel {
     AstKind kind;
@@ -129,7 +131,7 @@ struct AstLabel {
 struct AstCLabel {
     AstKind kind;
     Ast *statement;
-    Ast *constant;
+    I num;
 };
 struct AstSeq {
     AstKind kind;

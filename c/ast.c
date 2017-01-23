@@ -30,13 +30,12 @@ static void ast_walk_impl(Ast **node)
         ast_walk_impl(&n->fdef.statement);
         break;
     case A_VAR:
-        /* TODO */
+        ast_walk_impl(&n->var.statement);
         break;
     case A_LABEL:
         ast_walk_impl(&n->label.statement);
         break;
     case A_CLABEL:
-        ast_walk_impl(&n->clabel.constant);
         ast_walk_impl(&n->clabel.statement);
         break;
     case A_SEQ:
@@ -162,7 +161,7 @@ void ast_release(Ast *ast)
         vector_release(ast->fdef.arguments);
         break;
     case A_VAR:
-        /* TODO */
+        vector_release(ast->var.variables);
         break;
     case A_SEQ:
         vector_release(ast->seq.statements);

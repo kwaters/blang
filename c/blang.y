@@ -20,8 +20,8 @@
     I binop;
 }
 
-%type<num> incdec;
-%type<vector> block opt_value_list value_list ilist opt_ilist;
+%type<num> incdec nconstant;
+%type<vector> block opt_value_list value_list ilist opt_ilist auto_list extrn_list;
 %type<ast> statement value constant ival;
 
 %token<num> ASSIGN 258
@@ -70,7 +70,7 @@ program: /* empty */
 
 defintion: NAME ilist ';'
     | NAME '[' ']' opt_ilist ';'
-    | NAME '[' constant ']' opt_ilist ';'
+    | NAME '[' nconstant ']' opt_ilist ';'
     | NAME '(' arg_list ')' statement {
         ast_show($5);
     }
@@ -99,11 +99,11 @@ ival: constant
     }
     ;
 
-constant: NUMBER {
-        $$ = ast_get(A_NUM);
-        $$->num.num = $1;
-    }
-    | CHAR {
+nconstant: NUMBER
+    | CHAR
+    ;
+
+constant: nconstant {
         $$ = ast_get(A_NUM);
         $$->num.num = $1;
     }
@@ -121,24 +121,26 @@ arg_list_nonempty: NAME
     ;
 
 statement: AUTO auto_list ';' statement {
-        /* TODO */
-        /* $$ = ast_get(A_VAR); */
-        $$ = $4;
+        $$ = ast_get(A_VAR);
+        $$->var.statement = $4;
+        $$->var.isAuto = 1;
+        $$->var.variables = $2;
     }
     | EXTRN extrn_list ';' statement {
-        /* TODO */
-        /* $$ = ast_get(A_VAR); */
-        $$ = $4;
+        $$ = ast_get(A_VAR);
+        $$->var.statement = $4;
+        $$->var.isAuto = 0;
+        $$->var.variables = $2;
     }
     | NAME ':' statement {
         $$ = ast_get(A_LABEL);
         $$->label.statement = $3;
         $$->label.name = $1;
     }
-    | CASE constant ':' statement {
+    | CASE nconstant ':' statement {
         $$ = ast_get(A_CLABEL);
         $$->clabel.statement = $4;
-        $$->clabel.constant = $2;
+        $$->clabel.num = $2;
     }
     | '{' block '}' {
         $$ = ast_get(A_SEQ);
@@ -186,16 +188,36 @@ statement: AUTO auto_list ';' statement {
     }
     ;
 
-auto_list: auto_val
-    | auto_list ',' auto_val
+auto_list: NAME {
+        $$ = vector_get();
+        vector_push(&($$), $1);
+        vector_push(&($$), -1);
+    }
+    | NAME nconstant {
+        $$ = vector_get();
+        vector_push(&($$), $1);
+        vector_push(&($$), $2);
+    }
+    | auto_list ',' NAME {
+        $$ = $1;
+        vector_push(&($$), $3);
+        vector_push(&($$), -1);
+    }
+    | auto_list ',' NAME nconstant {
+        $$ = $1;
+        vector_push(&($$), $3);
+        vector_push(&($$), $4);
+    }
     ;
 
-auto_val: NAME
-    | NAME constant
-    ;
-
-extrn_list: NAME
-    | extrn_list ',' NAME
+extrn_list: NAME {
+        $$ = vector_get();
+        vector_push(&($$), $1);
+    }
+    | extrn_list ',' NAME {
+        $$ = $1;
+        vector_push(&($$), $3);
+    }
     ;
 
 block: /* empty */ {
