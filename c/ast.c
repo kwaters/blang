@@ -166,6 +166,9 @@ void ast_release(Ast *ast)
     case A_SEQ:
         vector_release(ast->seq.statements);
         break;
+    case A_SWITCH:
+        vector_release(ast->switch_.table);
+        break;
     case A_STR:
         free(ast->str.s);
         break;

@@ -208,6 +208,7 @@ statement: AUTO auto_list ';' statement {
         $$ = ast_get(A_SWITCH);
         $$->switch_.value = $3;
         $$->switch_.statement = $5;
+        $$->switch_.table = vector_get();
     }
     | GOTO value ';' {
         $$ = ast_get(A_GOTO);
