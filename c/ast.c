@@ -12,9 +12,9 @@ static void *ast_data;
 
 static void ast_walk_vector(struct Vector *vector);
 
-static void ast_walk_impl(union Ast **node)
+static void ast_walk_impl(Ast **node)
 {
-    union Ast *n = *node;
+    Ast *n = *node;
 
     if (ast_pre_func)
         ast_pre_func(node, ast_data);
@@ -121,11 +121,11 @@ static void ast_walk_vector(struct Vector *vector)
 
     size = vector_size(vector);
     for (i = 0; i < size; i++)
-        ast_walk_impl((union Ast **)&V_IDX(vector, i));
+        ast_walk_impl((Ast **)&V_IDX(vector, i));
 }
 
 
-void ast_walk(union Ast **node, AstWalkFunc pre_func, AstWalkFunc post_func, void *data)
+void ast_walk(Ast **node, AstWalkFunc pre_func, AstWalkFunc post_func, void *data)
 {
     ast_pre_func = pre_func;
     ast_post_func = post_func;
@@ -133,10 +133,10 @@ void ast_walk(union Ast **node, AstWalkFunc pre_func, AstWalkFunc post_func, voi
     ast_walk_impl(node);
 }
 
-union Ast *ast_get(AstKind kind)
+Ast *ast_get(AstKind kind)
 {
-    union Ast *ast = malloc(sizeof(union Ast));
-    memset(ast, 0, sizeof(union Ast));
+    Ast *ast = malloc(sizeof(Ast));
+    memset(ast, 0, sizeof(Ast));
 
     ast->kind = kind;
 
@@ -145,7 +145,7 @@ union Ast *ast_get(AstKind kind)
     return ast;
 }
 
-void ast_release(union Ast *ast)
+void ast_release(Ast *ast)
 {
     switch (ast->kind) {
     case A_PROG:
@@ -176,26 +176,26 @@ void ast_release(union Ast *ast)
     free(ast);
 }
 
-static void ast_release_recursive_post(union Ast **ast, void *data)
+static void ast_release_recursive_post(Ast **ast, void *data)
 {
     ast_release(*ast);
 }
 
-void ast_release_recursive(union Ast *ast)
+void ast_release_recursive(Ast *ast)
 {
     ast_walk(&ast, NULL, ast_release_recursive_post, NULL);
 }
 
-union Ast *ast_binop(union Ast *lhs, union Ast *rhs, I op)
+Ast *ast_binop(Ast *lhs, Ast *rhs, I op)
 {
-    union Ast *ast = ast_get(A_BIN);
+    Ast *ast = ast_get(A_BIN);
     ast->bin.lhs = lhs;
     ast->bin.rhs = rhs;
     ast->bin.op = op;
     return ast;
 }
 
-static void ast_show_pre(union Ast **node, void *v) {
+static void ast_show_pre(Ast **node, void *v) {
     char *name[] = {
         [A_PROG] = "PROG",
         [A_XDEF] = "XDEF",
@@ -227,10 +227,10 @@ static void ast_show_pre(union Ast **node, void *v) {
     };
     printf("{%s ", name[(*node)->kind]);
 }
-static void ast_show_post(union Ast **node, void *v) {
+static void ast_show_post(Ast **node, void *v) {
     printf("}");
 }
-void ast_show(union Ast *root)
+void ast_show(Ast *root)
 {
     ast_walk(&root, ast_show_pre, ast_show_post, NULL);
     printf("\n");

@@ -1,4 +1,5 @@
 %{
+#include <stdint.h>
 enum {
     ASSIGN = 258,
     CHAR = 259,
@@ -45,7 +46,6 @@ static int parse_number(int base);
 %x string
 
 %{
-    #include <stdint.h>
     static intptr_t char_lit;
     static int char_shift;
 

@@ -14,7 +14,7 @@
     char *name;
     bstring str;
     struct Vector *vector;
-    union Ast *ast;
+    Ast *ast;
 }
 
 %type<num> incdec;

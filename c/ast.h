@@ -99,7 +99,7 @@ A_COND
 A_CALL
 #endif
 
-union Ast;
+typedef union Ast_ Ast;
 
 struct AstProg {
     AstKind kind;
@@ -111,7 +111,7 @@ struct AstXdef {
 };
 struct AstFdef {
     AstKind kind;
-    union Ast *statement;
+    Ast *statement;
     Name name;
     struct Vector *arguments;
 };
@@ -129,35 +129,35 @@ struct AstSeq {
 };
 struct AstIfe {
     AstKind kind;
-    union Ast *cond;
-    union Ast *then;
-    union Ast *else_;
+    Ast *cond;
+    Ast *then;
+    Ast *else_;
 };
 struct AstWhile {
     AstKind kind;
-    union Ast *cond;
-    union Ast *statement;
+    Ast *cond;
+    Ast *statement;
 };
 struct AstSwitch {
     AstKind kind;
-    union Ast *value;
-    union Ast *statement;
+    Ast *value;
+    Ast *statement;
     struct Vector *table;
 };
 struct AstGoto {
     AstKind kind;
-    union Ast *expr;
+    Ast *expr;
 };
 struct AstVrtrn {
     AstKind kind;
 };
 struct AstRtrn {
     AstKind kind;
-    union Ast *expr;
+    Ast *expr;
 };
 struct AstExpr {
     AstKind kind;
-    union Ast *expr;
+    Ast *expr;
 };
 struct AstVoid {
     AstKind kind;
@@ -168,12 +168,12 @@ struct AstName {
 };
 struct AstInd {
     AstKind kind;
-    union Ast *expr;
+    Ast *expr;
 };
 struct AstIndex {
     AstKind kind;
-    union Ast *vector;
-    union Ast *index;
+    Ast *vector;
+    Ast *index;
 };
 struct AstNum {
     AstKind kind;
@@ -185,48 +185,48 @@ struct AstStr {
 };
 struct AstAssign {
     AstKind kind;
-    union Ast *lhs;
-    union Ast *rhs;
+    Ast *lhs;
+    Ast *rhs;
     I op;
 };
 struct AstPre {
     AstKind kind;
-    union Ast *expr;
+    Ast *expr;
     I num;
 };
 struct AstPost {
     AstKind kind;
-    union Ast *expr;
+    Ast *expr;
     I num;
 };
 struct AstUnary {
     AstKind kind;
-    union Ast *expr;
+    Ast *expr;
     I op;
 };
 struct AstAddr {
     AstKind kind;
-    union Ast *expr;
+    Ast *expr;
 };
 struct AstBin {
     AstKind kind;
-    union Ast *lhs;
-    union Ast *rhs;
+    Ast *lhs;
+    Ast *rhs;
     I op;
 };
 struct AstCond {
     AstKind kind;
-    union Ast *cond;
-    union Ast *yes;
-    union Ast *no;
+    Ast *cond;
+    Ast *yes;
+    Ast *no;
 };
 struct AstCall {
     AstKind kind;
-    union Ast *function;
+    Ast *function;
     struct Vector *arguments;
 };
 
-union Ast {
+union Ast_ {
     AstKind kind;
     struct AstProg prog;
     struct AstXdef xdef;
@@ -257,10 +257,10 @@ union Ast {
     struct AstCall call;
 };
 
-typedef void (*AstWalkFunc)(union Ast **node, void *data);
-void ast_walk(union Ast **node, AstWalkFunc pre, AstWalkFunc post, void *data);
-void ast_show(union Ast *root);
-union Ast *ast_get(AstKind kind);
-void ast_release(union Ast *node);
-void ast_release_recursive(union Ast *ast);
-union Ast *ast_binop(union Ast *lhs, union Ast *rhs, I op);
+typedef void (*AstWalkFunc)(Ast **node, void *data);
+void ast_walk(Ast **node, AstWalkFunc pre, AstWalkFunc post, void *data);
+void ast_show(Ast *root);
+Ast *ast_get(AstKind kind);
+void ast_release(Ast *node);
+void ast_release_recursive(Ast *ast);
+Ast *ast_binop(Ast *lhs, Ast *rhs, I op);

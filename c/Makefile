@@ -3,7 +3,7 @@ LD := clang
 FLEX := flex
 BISON := bison
 
-CFLAGS := -Wall -Wextra -Os -ggdb
+CFLAGS := -Wall -Wextra -Wno-unused-parameter -Os -ggdb -std=c89
 LDFLAGS :=
 
 PROGRAM := bc1
