@@ -11,6 +11,10 @@ static AstWalkFunc ast_post_func;
 static void *ast_data;
 
 static void ast_walk_vector(struct Vector *vector);
+static char *ast_show_name(I name);
+static void ast_show_string(char *s, I len);
+char *ast_show_bin(I op);
+char *ast_show_unary(I op);
 
 static void ast_walk_impl(Ast **node)
 {
@@ -201,44 +205,235 @@ Ast *ast_binop(Ast *lhs, Ast *rhs, I op)
     return ast;
 }
 
+static int ast_show_indent_level = 0;
+static int ast_show_close_node = 0;
+
 static void ast_show_pre(Ast **node, void *v) {
-    char *name[] = {
-        [A_PROG] = "PROG",
-        [A_XDEF] = "XDEF",
-        [A_FDEF] = "FDEF",
-        [A_VAR] = "VAR",
-        [A_LABEL] = "LABEL",
-        [A_CLABEL] = "CLABEL",
-        [A_SEQ] = "SEQ",
-        [A_IFE] = "IFE",
-        [A_WHILE] = "WHILE",
-        [A_SWITCH] = "SWITCH",
-        [A_GOTO] = "GOTO",
-        [A_VRTRN] = "VRTRN",
-        [A_RTRN] = "RTRN",
-        [A_EXPR] = "EXPR",
-        [A_VOID] = "VOID",
-        [A_NAME] = "NAME",
-        [A_IND] = "IND",
-        [A_INDEX] = "INDEX",
-        [A_NUM] = "NUM",
-        [A_STR] = "STR",
-        [A_ASSIGN] = "ASSIGN",
-        [A_PRE] = "PRE",
-        [A_POST] = "POST",
-        [A_UNARY] = "UNARY",
-        [A_ADDR] = "ADDR",
-        [A_BIN] = "BIN",
-        [A_COND] = "COND",
-        [A_CALL] = "CALL"
-    };
-    printf("{%s ", name[(*node)->kind]);
+    Ast *n;
+    int i;
+    int end;
+
+    for (i = 0; i < ast_show_indent_level; ++i)
+        printf("  ");
+
+    ast_show_close_node = 1;
+    n = *node;
+    switch (n->kind) {
+    case A_PROG:
+        printf("PROG {\n");
+        break;
+    case A_XDEF:
+        printf("XDEF %s %ld {\n", ast_show_name(n->xdef.name), n->xdef.size);
+        break;
+    case A_FDEF:
+        printf("FDEF %s(", ast_show_name(n->fdef.name));
+        for (i = 0, end = vector_size(n->fdef.arguments); i < end; i++) {
+            if (i != 0)
+                printf(", ");
+            printf("%s", ast_show_name(V_IDX(n->fdef.arguments, i)));
+        }
+        printf(") {\n");
+        break;
+    case A_VAR:
+        if (n->var.isAuto) {
+            printf("VAR AUTO [");
+            end = vector_size(n->var.variables);
+            if (end % 2 != 0)
+                ice("Unexpected VAR size.");
+            for (i = 0; i < end; i += 2) {
+                if (i != 0)
+                    printf(", ");
+                printf("%s %ld",
+                       ast_show_name(V_IDX(n->fdef.arguments, i)),
+                       V_IDX(n->fdef.arguments, i + 1));
+            }
+        } else {
+            printf("VAR EXTRN [");
+            end = vector_size(n->var.variables);
+            for (i = 0; i < end; i++) {
+                if (i != 0)
+                    printf(", ");
+                printf("%s", ast_show_name(V_IDX(n->fdef.arguments, i)));
+            }
+        }
+        printf("] {\n");
+        break;
+    case A_LABEL:
+        printf("LABEL %s {\n", ast_show_name(n->label.name));
+        break;
+    case A_CLABEL:
+        printf("CLABEL %ld {\n", n->clabel.num);
+        break;
+    case A_SEQ:
+        printf("SEQ {\n");
+        break;
+    case A_IFE:
+        printf("IFE {\n");
+        break;
+    case A_WHILE:
+        printf("WHILE {\n");
+        break;
+    case A_SWITCH:
+        printf("SWITCH {\n");
+        /* Don't need to print table. */
+        break;
+    case A_GOTO:
+        printf("GOTO {\n");
+        break;
+    case A_VRTRN:
+        printf("VRTRN\n");
+        ast_show_close_node = 0;
+        break;
+    case A_RTRN:
+        printf("RTRN {\n");
+        break;
+    case A_EXPR:
+        printf("EXPR {\n");
+        break;
+    case A_VOID:
+        printf("VOID\n");
+        ast_show_close_node = 0;
+        break;
+    case A_NAME:
+        printf("NAME %s\n", ast_show_name(n->name.name));
+        ast_show_close_node = 0;
+        break;
+    case A_IND:
+        printf("IND {\n");
+        break;
+    case A_INDEX:
+        printf("INDEX {\n");
+        break;
+    case A_NUM:
+        printf("NUM %ld\n", n->num.num);
+        ast_show_close_node = 0;
+        break;
+    case A_STR:
+        printf("STR \"");
+        ast_show_string(n->str.s, n->str.len);
+        printf("\"\n");
+        ast_show_close_node = 0;
+        break;
+    case A_ASSIGN:
+        if (n->assign.op) {
+            printf("ASSIGN %s {\n", ast_show_bin(n->assign.op));
+        } else {
+            printf("ASSIGN {\n");
+        }
+        break;
+    case A_PRE:
+        printf("PRE %ld {\n", n->pre.num);
+        break;
+    case A_POST:
+        printf("POST %ld {\n", n->post.num);
+        break;
+    case A_UNARY:
+        printf("UNARY %s {\n", ast_show_unary(n->unary.op));
+        break;
+    case A_ADDR:
+        printf("ADDR {\n");
+        break;
+    case A_BIN:
+        printf("BIN %s {\n", ast_show_bin(n->bin.op));
+        break;
+    case A_COND:
+        printf("COND {\n");
+        break;
+    case A_CALL:
+        printf("CALL {\n");
+        break;
+    default:
+        ice("Unhandled kind in ast_show_pre.");
+    }
+
+    if (ast_show_close_node)
+        ast_show_indent_level++;
 }
+
 static void ast_show_post(Ast **node, void *v) {
-    printf("}");
+    int i;
+
+    if (!ast_show_close_node) {
+        ast_show_close_node = 1;
+        return;
+    }
+
+    ast_show_indent_level--;
+    for (i = 0; i < ast_show_indent_level; ++i)
+        printf("  ");
+    printf("}\n");
 }
+
 void ast_show(Ast *root)
 {
     ast_walk(&root, ast_show_pre, ast_show_post, NULL);
     printf("\n");
+}
+
+char *ast_show_name(I name)
+{
+    static char s[9] = "";
+    int i;
+
+    for (i = 0; i < 8; i++) {
+        s[i] = name & 0xff;
+        name >>= 8;
+    }
+    return s;
+}
+
+void ast_show_string(char *s, I len)
+{
+    I i;
+    for (i = 0; i < len; ++i) {
+        char c = s[i];
+        if (c == '\0') {
+            printf("*0");
+        } else if (c == '\x04') {
+            printf("*e");
+        } else if (c == '\t') {
+            printf("*t");
+        } else if (c == '\n') {
+            printf("*n");
+        } else if (c == '*') {
+            printf("**");
+        } else if (c == '"') {
+            printf("*\"");
+        } else if (c >= ' ' && c <= '~') {
+            printf("%c", c);
+        } else {
+            printf("?");
+        }
+    }
+}
+
+char *ast_show_bin(I op)
+{
+    switch(op) {
+    case O_OR: return "OR";
+    case O_AND: return "AND";
+    case O_EQ: return "EQ";
+    case O_NEQ: return "NEQ";
+    case O_LT: return "LT";
+    case O_LTE: return "LTE";
+    case O_GT: return "GT";
+    case O_GTE: return "GTE";
+    case O_SHIFTL: return "SHIFTL";
+    case O_SHIFTR: return "SHIFTR";
+    case O_MINUS: return "MINUS";
+    case O_PLUS: return "PLUS";
+    case O_REM: return "REM";
+    case O_MUL: return "MUL";
+    case O_DIV: return "DIV";
+    }
+    return "";
+}
+
+char *ast_show_unary(I op)
+{
+    switch(op) {
+    case U_NEG: return "NEG";
+    case U_NOT: return "NOT";
+    }
+    return "";
 }
