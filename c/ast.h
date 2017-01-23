@@ -109,7 +109,9 @@ struct AstProg {
 };
 struct AstXdef {
     AstKind kind;
-    /* TODO */
+    Name name;
+    I size;  /* -1 -> scalar */
+    struct Vector *initializer;
 };
 struct AstFdef {
     AstKind kind;

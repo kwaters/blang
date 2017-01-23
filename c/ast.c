@@ -24,7 +24,7 @@ static void ast_walk_impl(Ast **node)
         ast_walk_vector(n->prog.definitions);
         break;
     case A_XDEF:
-        /* TODO */
+        ast_walk_vector(n->xdef.initializer);
         break;
     case A_FDEF:
         ast_walk_impl(&n->fdef.statement);
@@ -155,7 +155,7 @@ void ast_release(Ast *ast)
         vector_release(ast->prog.definitions);
         break;
     case A_XDEF:
-        /* TODO */
+        vector_release(ast->xdef.initializer);
         break;
     case A_FDEF:
         vector_release(ast->fdef.arguments);

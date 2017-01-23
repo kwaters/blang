@@ -21,8 +21,9 @@
 }
 
 %type<num> incdec nconstant;
-%type<vector> block opt_value_list value_list ilist opt_ilist auto_list extrn_list;
-%type<ast> statement value constant ival;
+%type<vector> block opt_value_list value_list ilist opt_ilist auto_list
+    extrn_list arg_list arg_list_nonempty;
+%type<ast> statement value constant ival defintion;
 
 %token<num> ASSIGN 258
 %token<num> CHAR 259
@@ -68,11 +69,30 @@ program: /* empty */
     | program defintion
     ;
 
-defintion: NAME ilist ';'
-    | NAME '[' ']' opt_ilist ';'
-    | NAME '[' nconstant ']' opt_ilist ';'
+defintion: NAME opt_ilist ';' {
+        $$ = ast_get(A_XDEF);
+        $$->xdef.name = $1;
+        $$->xdef.size = -1;
+        $$->xdef.initializer = $2;
+    }
+    | NAME '[' ']' opt_ilist ';' {
+        $$ = ast_get(A_XDEF);
+        $$->xdef.name = $1;
+        /* "If the vector size is missing, zero is assumed." -- 7.2 */
+        $$->xdef.size = 0;
+        $$->xdef.initializer = $4;
+    }
+    | NAME '[' nconstant ']' opt_ilist ';' {
+        $$ = ast_get(A_XDEF);
+        $$->xdef.name = $1;
+        $$->xdef.size = $3;
+        $$->xdef.initializer = $5;
+    }
     | NAME '(' arg_list ')' statement {
-        ast_show($5);
+        $$ = ast_get(A_FDEF);
+        $$->fdef.statement = $5;
+        $$->fdef.name = $1;
+        $$->fdef.arguments = $3;
     }
     ;
 
@@ -112,12 +132,20 @@ constant: nconstant {
     }
     ;
 
-arg_list: /* empty */
+arg_list: /* empty */ {
+        $$ = vector_get_reserve(0);
+    }
     | arg_list_nonempty
     ;
 
-arg_list_nonempty: NAME
-    | arg_list_nonempty ',' NAME
+arg_list_nonempty: NAME {
+        $$ = vector_get();
+        vector_push(&($$), $1);
+    }
+    | arg_list_nonempty ',' NAME {
+        $$ = $1;
+        vector_push(&($$), $3);
+    }
     ;
 
 statement: AUTO auto_list ';' statement {
