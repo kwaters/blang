@@ -77,6 +77,7 @@ vcGrow(v, cap) {
         newV[i++] = oldV[i];
     newV[-1] = sz;
 
+    newV[-2] = cap;
     vcRlse(oldV);
 }
 

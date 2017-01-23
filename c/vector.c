@@ -33,6 +33,7 @@ static void vector_grow(struct Vector **vector, I capacity)
         return;
 
     v = realloc(v, sizeof(struct Vector) + sizeof(I) * (capacity - 1));
+    v->capacity = capacity;
     *vector = v;
 }
 
