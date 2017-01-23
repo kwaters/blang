@@ -5,6 +5,7 @@
 #include "blang.tab.h"
 
 extern FILE *yyin;
+extern Ast *yy_program;
 
 void ice(char *s)
 {
@@ -36,5 +37,11 @@ int main(int argc, char *argv[])
     yyin = f;
     ret = yyparse();
     printf("yyparse() = %d\n", ret);
+
+    if (!ret) {
+        ast_show(yy_program);
+        ast_release_recursive(yy_program);
+    }
+
     return 0;
 }

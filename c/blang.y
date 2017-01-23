@@ -7,10 +7,13 @@
 %{
     #include <stdint.h>
     #include <string.h>
+    #include "ast.h"
     #include "vector.h"
 
     extern void yyerror(char *);
     extern int yylex(void);
+
+    Ast *yy_program;
 %}
 
 %union {
@@ -67,8 +70,13 @@
 
 %%
 
-program: /* empty */
-    | program defintion
+program: /* empty */ {
+       yy_program = ast_get(A_PROG);
+       yy_program->prog.definitions = vector_get();
+    }
+    | program defintion {
+        vector_push(&yy_program->prog.definitions, (I)($2));
+    }
     ;
 
 defintion: NAME opt_ilist ';' {
