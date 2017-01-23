@@ -1,43 +1,21 @@
 %{
-#include <stdint.h>
-enum {
-    ASSIGN = 258,
-    CHAR = 259,
-    DEC = 260,
-    EQ = 261,
-    GTE = 262,
-    INC = 263,
-    LTE = 264,
-    NAME = 265,
-    NEQ = 266,
-    NUMBER = 267,
-    SHIFTL = 268,
-    SHIFTR = 269,
-    STRING = 270,
-    AUTO = 271,
-    CASE = 272,
-    ELSE = 273,
-    EXTRN = 274,
-    GOTO = 275,
-    IF = 276,
-    RETURN = 277,
-    SWITCH = 278,
-    WHILE = 279
-};
+#include "base.h"
+#include "blang.tab.h"
 
 union yylval_t {
     int assign_op;
-    intptr_t number;
-    char *name;
+    I number;
+    I name;
     struct {
         char *s;
         size_t len;
     } str;
 };
-union yylval_t yylval;
+YYSTYPE yylval;
 
 static char unescape(char c);
-static int parse_number(int base);
+static I parse_number(I base);
+static I parse_name(char *name);
 
 %}
 
@@ -46,7 +24,7 @@ static int parse_number(int base);
 %x string
 
 %{
-    static intptr_t char_lit;
+    static I char_lit;
     static int char_shift;
 
     static char string_buf[8192];
@@ -73,16 +51,16 @@ static int parse_number(int base);
 }
 <character>{
     \*. {
-        char_lit |= (intptr_t)unescape(yytext[1]) << char_shift;
+        char_lit |= (I)unescape(yytext[1]) << char_shift;
         char_shift += 8;
     }
     [^'*\n] {
-        char_lit |= (intptr_t)yytext[0] << char_shift;
+        char_lit |= (I)yytext[0] << char_shift;
         char_shift += 8;
     }
     ' {
         BEGIN(INITIAL);
-        yylval.number = char_lit;
+        yylval.num = char_lit;
         return CHAR;
     }
     . abort();
@@ -104,8 +82,10 @@ static int parse_number(int base);
     \" {
         BEGIN(INITIAL);
         *string_p++ = '\x04';
+        #if 0
         yylval.str.s = string_buf;
         yylval.str.len = string_p - string_buf;
+        #endif
     }
     . abort();
     <<EOF>>  abort();
@@ -140,22 +120,22 @@ while   return WHILE;
 }
 
  /* assignment */
-"="      yylval.assign_op = 0;      return ASSIGN;
-"=<<"    yylval.assign_op = SHIFTL; return ASSIGN;
-"=>>"    yylval.assign_op = SHIFTR; return ASSIGN;
-"=<="    yylval.assign_op = LTE;    return ASSIGN;
-"=>="    yylval.assign_op = GTE;    return ASSIGN;
-"==="    yylval.assign_op = EQ;     return ASSIGN;
-"=!="    yylval.assign_op = NEQ;    return ASSIGN;
+"="      yylval.binop = 0;      return ASSIGN;
+"=<<"    yylval.binop = SHIFTL; return ASSIGN;
+"=>>"    yylval.binop = SHIFTR; return ASSIGN;
+"=<="    yylval.binop = LTE;    return ASSIGN;
+"=>="    yylval.binop = GTE;    return ASSIGN;
+"==="    yylval.binop = EQ;     return ASSIGN;
+"=!="    yylval.binop = NEQ;    return ASSIGN;
 =[=|&-+%*/] {
     /* TODO: This isn't right. */
-    yylval.assign_op = yytext[0];
+    yylval.binop = yytext[0];
     return ASSIGN;
 }
 
  /* name */
 [a-z._A-Z][a-z._A-Z0-9]* {
-    yylval.name = strdup(yytext);
+    yylval.name = parse_name(yytext);
     return NAME;
 }
 
@@ -176,15 +156,27 @@ char unescape(char c)
     return c;
 }
 
-int parse_number(int base) {
+I parse_number(I base) {
     int i;
-    intptr_t out = 0;
+    I out = 0;
 
     for (i = 0; i < yyleng; i++)
         out = base * out + yytext[i] - '0';
-    yylval.number = out;
+    yylval.num = out;
 
     return NUMBER;
+}
+
+I parse_name(char *name) {
+    I x = 0;
+    int i;
+    char *s;
+
+    // Only the first 8 characters matter.
+    for (i = 0, s = name; i < 8 && *s; s++)
+        x |= (I)*s << (8 * i++);
+
+    return x;
 }
 
 int yywrap()

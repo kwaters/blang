@@ -1,8 +1,11 @@
 /* B parser */
 
+%code requires{
+    #include "ast.h"
+}
+
 %{
     #include <stdint.h>
-    #include "ast.h"
     #include "vector.h"
 
     extern void yyerror(char *);
@@ -11,10 +14,10 @@
 
 %union {
     I num;
-    char *name;
-    bstring str;
+    I name;
     struct Vector *vector;
     Ast *ast;
+    I binop;
 }
 
 %type<num> incdec;
