@@ -6,6 +6,7 @@
 
 %{
     #include <stdint.h>
+    #include <string.h>
     #include "vector.h"
 
     extern void yyerror(char *);
@@ -18,6 +19,7 @@
     struct Vector *vector;
     Ast *ast;
     I binop;
+    struct Bstring str;
 }
 
 %type<num> incdec nconstant;
@@ -37,7 +39,7 @@
 %token<num> NUMBER 267
 %token SHIFTL 268
 %token SHIFTR 269
-%token STRING 270
+%token<str> STRING 270
 %token AUTO 271
 %token CASE 272
 %token ELSE 273
@@ -129,6 +131,9 @@ constant: nconstant {
     }
     | STRING {
         $$ = ast_get(A_STR);
+        $$->str.s = malloc($1.len);
+        memcpy($$->str.s, $1.s, $1.len);
+        $$->str.len = $1.len;
     }
     ;
 

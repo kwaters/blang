@@ -193,7 +193,8 @@ struct AstNum {
 };
 struct AstStr {
     AstKind kind;
-    /* TODO */
+    char *s;
+    I len;
 };
 struct AstAssign {
     AstKind kind;

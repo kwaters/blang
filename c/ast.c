@@ -166,6 +166,8 @@ void ast_release(Ast *ast)
     case A_SEQ:
         vector_release(ast->seq.statements);
         break;
+    case A_STR:
+        free(ast->str.s);
     case A_CALL:
         vector_release(ast->call.arguments);
         break;
