@@ -17,6 +17,7 @@ enum {
     /* Statements */
     A_VAR,
     A_LABEL,
+    A_CLABEL,
     A_SEQ,
     A_IFE,
     A_WHILE,
@@ -75,6 +76,7 @@ A_XDEF
 A_FDEF
 A_VAR
 A_LABEL
+A_CLABEL
 A_SEQ
 A_IFE
 A_WHILE
@@ -120,8 +122,14 @@ struct AstVar {
     AstKind kind;
 };
 struct AstLabel {
-    /* TODO */
     AstKind kind;
+    Ast *statement;
+    Name name;
+};
+struct AstCLabel {
+    AstKind kind;
+    Ast *statement;
+    Ast *constant;
 };
 struct AstSeq {
     AstKind kind;
@@ -233,6 +241,7 @@ union Ast_ {
     struct AstFdef fdef;
     struct AstVar var;
     struct AstLabel label;
+    struct AstCLabel clabel;
     struct AstSeq seq;
     struct AstIfe ife;
     struct AstWhile while_;

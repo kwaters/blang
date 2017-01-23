@@ -33,7 +33,11 @@ static void ast_walk_impl(Ast **node)
         /* TODO */
         break;
     case A_LABEL:
-        /* TODO */
+        ast_walk_impl(&n->label.statement);
+        break;
+    case A_CLABEL:
+        ast_walk_impl(&n->clabel.constant);
+        ast_walk_impl(&n->clabel.statement);
         break;
     case A_SEQ:
         ast_walk_vector(n->seq.statements);
@@ -160,9 +164,6 @@ void ast_release(Ast *ast)
     case A_VAR:
         /* TODO */
         break;
-    case A_LABEL:
-        /* TODO */
-        break;
     case A_SEQ:
         vector_release(ast->seq.statements);
         break;
@@ -202,6 +203,7 @@ static void ast_show_pre(Ast **node, void *v) {
         [A_FDEF] = "FDEF",
         [A_VAR] = "VAR",
         [A_LABEL] = "LABEL",
+        [A_CLABEL] = "CLABEL",
         [A_SEQ] = "SEQ",
         [A_IFE] = "IFE",
         [A_WHILE] = "WHILE",

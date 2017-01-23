@@ -131,14 +131,14 @@ statement: AUTO auto_list ';' statement {
         $$ = $4;
     }
     | NAME ':' statement {
-        /* TODO */
-        /* $$ = ast_get(A_LABEL); */
-        $$ = $3;
+        $$ = ast_get(A_LABEL);
+        $$->label.statement = $3;
+        $$->label.name = $1;
     }
     | CASE constant ':' statement {
-        /* TODO */
-        /* $$ = ast_get(A_LABEL); */
-        $$ = $4;
+        $$ = ast_get(A_CLABEL);
+        $$->clabel.statement = $4;
+        $$->clabel.constant = $2;
     }
     | '{' block '}' {
         $$ = ast_get(A_SEQ);
