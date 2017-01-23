@@ -4,11 +4,6 @@
 
 #include "base.h"
 
-typedef struct bstring_ {
-    char *s;
-    size_t len;
-} bstring;
-
 enum {
     /* AST node kinds. */
     A_PROG = 1,

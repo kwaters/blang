@@ -84,6 +84,7 @@ static I parse_name(char *name);
         *string_p++ = '\x04';
         yylval.str.s = string_buf;
         yylval.str.len = string_p - string_buf;
+        return STRING;
     }
     . abort();
     <<EOF>>  abort();
