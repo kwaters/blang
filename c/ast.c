@@ -18,10 +18,13 @@ char *ast_show_unary(I op);
 
 static void ast_walk_impl(Ast **node)
 {
-    Ast *n = *node;
+    Ast *n;
 
     if (ast_pre_func)
         ast_pre_func(node, ast_data);
+
+    /* NOTE: ast_pre_func may have altered *node */
+    n = *node;
 
     switch (n->kind) {
     case A_PROG:
@@ -112,6 +115,9 @@ static void ast_walk_impl(Ast **node)
     case A_CALL:
         ast_walk_impl(&n->call.function);
         ast_walk_vector(n->call.arguments);
+        break;
+    case A_LOAD:
+        ast_walk_impl(&n->load.expr);
         break;
     default:
         ice("Unexpected AST node");
@@ -341,6 +347,9 @@ static void ast_show_pre(Ast **node, void *v) {
         break;
     case A_CALL:
         printf("CALL {\n");
+        break;
+    case A_LOAD:
+        printf("LOAD {\n");
         break;
     default:
         ice("Unhandled kind in ast_show_pre.");

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "ast.h"
 #include "blang.tab.h"
+#include "lrvalue.h"
 
 extern FILE *yyin;
 extern Ast *yy_program;
@@ -13,10 +14,15 @@ void ice(char *s)
     abort();
 }
 
+void err(char *code, char *s)
+{
+    fprintf(stderr, "%s: %s\n", code, s);
+    exit(1);
+}
+
 void yyerror(char *s)
 {
-    fprintf(stderr, "ERROR: syntax: %s\n", s);
-    exit(1);
+    err("xx", s);
 }
 
 int main(int argc, char *argv[])
@@ -38,10 +44,16 @@ int main(int argc, char *argv[])
     ret = yyparse();
     printf("yyparse() = %d\n", ret);
 
-    if (!ret) {
-        ast_show(yy_program);
-        ast_release_recursive(yy_program);
-    }
+    if (ret)
+        return 1;
+
+    ast_show(yy_program);
+
+    printf("\n ==== \n\n");
+    lrvalue_pass(&yy_program);
+    ast_show(yy_program);
+
+    ast_release_recursive(yy_program);
 
     return 0;
 }

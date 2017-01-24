@@ -36,6 +36,8 @@ A_BIN     26;  /* Binary operator */
 A_COND    27;  /* Conditional expression (?:) */
 A_CALL    28;  /* Function call */
 
+/* synthetic */
+A_LOAD    29;  /* lvalue to rvalue Load */
 
 /* Since case labels must be a constant, it can be confusion to switch on the
  * AST node type.  This is a pre-formatted switch statement, which can by
@@ -115,6 +117,7 @@ stWalk(n, pre, post, data) {
     case 26:  /* A_BIN */
     case 27:  /* A_COND */
     case 28:  /* A_CALL */
+    case 29:  /* A_LOAD */
         ;
     }
 break:

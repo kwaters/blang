@@ -9,3 +9,4 @@ struct Bstring {
 };
 
 void ice(char *);
+void err(char *, char *);

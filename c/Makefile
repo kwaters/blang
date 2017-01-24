@@ -12,7 +12,8 @@ SOURCES := \
     bc1.c \
     blang.tab.c \
     blang.yy.c \
-    vector.c
+    vector.c \
+    lrvalue.c
 
 OBJECTS := $(SOURCES:.c=.o)
 

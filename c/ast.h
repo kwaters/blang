@@ -36,7 +36,10 @@ enum {
     A_ADDR,
     A_BIN,
     A_COND,
-    A_CALL
+    A_CALL,
+
+    /* synthetic */
+    A_LOAD
 };
 
 enum {
@@ -233,6 +236,10 @@ struct AstCall {
     Ast *function;
     struct Vector *arguments;
 };
+struct AstLoad {
+    AstKind kind;
+    Ast *expr;
+};
 
 union Ast_ {
     AstKind kind;
@@ -264,6 +271,7 @@ union Ast_ {
     struct AstBin bin;
     struct AstCond cond;
     struct AstCall call;
+    struct AstLoad load;
 };
 
 typedef void (*AstWalkFunc)(Ast **node, void *data);
