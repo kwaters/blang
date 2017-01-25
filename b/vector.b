@@ -20,12 +20,14 @@
 
 /* Returns an empty dynamically resizable vector from the core hole. */
 vcGet() {
+    extrn vcGetR;
     return (vcGetR(6));
 }
 
 /* Returns an empty dynamically resizable vector with an initial capacity of
  * |cap|. */
 vcGetR(cap) {
+    extrn getvec;
     auto v;
 
     v = getvec(cap + 1) + 2;
@@ -36,6 +38,7 @@ vcGetR(cap) {
 
 /* Release a dynamically resizable vector. */
 vcRlse(vec) {
+    extrn rlsevec;
     rlsevec(vec - 2, vec[-2] + 1);
 }
 
@@ -47,6 +50,7 @@ vcSize(vec) {
 /* Set the size of a resizeable vector.  |v| is the address of the vector. */
 vcSSize(v, size)
 {
+    extrn vcGrow;
     vcGrow(v, size);
     (*v)[-1] = size;
 }
@@ -59,12 +63,13 @@ vcCap(vec) {
 /* Set the capacity of a resizeable vector.  |v| is the address of the
  * vector. */
 vcGrow(v, cap) {
+    extrn vcGetR, vcRlse;
     auto oldCap, oldV, newV, sz, i;
 
     oldV = *v;
 
     /* Never shrink a vector. */
-    if (n <= oldV[-2]) {
+    if (cap <= oldV[-2]) {
         return;
     }
 
@@ -83,6 +88,7 @@ vcGrow(v, cap) {
 
 /* Add an element to the end of a vector.  |v| is the address of the vector. */
 vcPush(v, x) {
+    extrn vcGrow;
     auto vec;
     vec = *v;
 

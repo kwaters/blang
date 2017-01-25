@@ -50,6 +50,8 @@ lIsDigit(c) {
 }
 
 lIsIdent(c) {
+    extrn lIsDigit, lIsAlpha;
+
     if (lIsDigit(c))
         return (1);
     if (lIsAlpha(c))
@@ -66,15 +68,17 @@ lReplace(char) {
 }
 
 lError(char) {
+    extrn exit;
     exit();
 }
 
 /* Eat whitespace and comments. */
 lEatWhte(tok) {
+    extrn lGetC, lReplace, lComment;
     auto c, peek;
 
 loop:
-    switch (c = lGet(C)) {
+    switch (c = lGetC()) {
     case ' ':
     case '*t':
     case '*n':
@@ -98,6 +102,7 @@ loop:
 
 /* Consume a comment after "/" "*". */
 lComment() {
+    extrn lGetC, lError;
     auto c;
 
 state1:
@@ -126,6 +131,8 @@ error:
 
 /* Get the next token. */
 lMain(tok) {
+    extrn lEatWhte, lChar, lError, lGetC, lIsAlpha, lIsDigit, lName, lNumber,
+          lOp, lString;
     auto c;
 
     tok[1] = tok[2] = 0;
@@ -176,6 +183,7 @@ lMain(tok) {
 /* Parse a number. |c| should be the first character of the number. */
 lNumber(c, tok) {
     extrn T_NUMBER;
+    extrn lIsDigit, lGetC, lReplace;
     auto base, num;
 
     base = c == '0' ? 8 : 10;
@@ -194,10 +202,12 @@ lNumber(c, tok) {
 lName(c, tok) {
     extrn T_AUTO, T_CASE, T_ELSE, T_EXTRN, T_GOTO, T_IF, T_RETURN, T_SWITCH,
           T_WHILE, T_NAME;
+    extrn lchar;
+    extrn lIsIdent, lReplace;
     auto i;
 
     i = 0;
-    while (IsIdent(c)) {
+    while (lIsIdent(c)) {
         if (i < 8)
             lchar(tok + 1, i++, c);
     }
@@ -248,7 +258,10 @@ lEscape(c) {
 
 /* Parse a character constant. */
 lChar(tok) {
-    auto i;
+    extrn T_CHAR;
+    extrn lchar;
+    extrn lGetC, lEscape, lError;
+    auto c, i;
 
     i = 0;
     while (1) {
@@ -284,6 +297,8 @@ exit:
  */
 lString(tok) {
     extrn T_STRING;
+    extrn getvec, rlsevec, memcpy, lchar;
+    extrn lGetC, lEscape, lError;
     auto i, c, s, newS, limit;
 
     limit = 8;
@@ -316,6 +331,7 @@ break:
         lchar(s, i++, c);
     }
 
+exit:
     /* Terminate string. */
     lchar(s, i, '*e');
     s[-1] = limit;
@@ -330,6 +346,7 @@ break:
 lOp(tok, assign) {
     extrn T_ASSIGN, T_NEQ, T_EQ, T_LTE, T_GTE, T_SHIFTL, T_SHIFTR,
           T_DEC, T_INC;
+    extrn lGetC, lReplace;
     auto c, peek;
 
     tok[0] = 0;
@@ -378,7 +395,7 @@ lOp(tok, assign) {
             }
             goto break;
         } else {
-            return (BinOp(tok, 1));
+            return (lOp(tok, 1));
         }
 
     case '<':

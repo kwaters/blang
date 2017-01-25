@@ -83,8 +83,6 @@ stRlse(node) {
 }
 
 stWalk(n, pre, post, data) {
-    auto n;
-
     if (pre)
         pre(n, data);
 
