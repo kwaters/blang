@@ -3,6 +3,7 @@
 import blang
 import blang.compiler
 import blang.primitive
+import blang.obj
 
 
 s = """
@@ -48,12 +49,7 @@ nargs(x) {
 }
 
 main() {
-    auto v;
-
     puts("Hello, World!*n");
-    .syscall('abc', 1, &main, 3);
-    .syscall('abc', &v);
-    exit(v);
 }
 """
 
@@ -87,6 +83,19 @@ for part in blang.parser.parser.parse(s):
 
 b.link()
 
+o = blang.obj.BObject()
+o.core = b.core().copy()
+
+for relocation in b._relocations:
+    o.relocations.append(blang.obj.Relocation(*relocation))
+for n, a in b._extrns.iteritems():
+    o.definitions.append(blang.obj.Definition(n, a))
+
+o.pc, o.sp = b[b._extrns['.start']], 0xff
+
+with open('out.bo', 'w') as f:
+    w = blang.obj.Writer(f)
+    w.dump(o)
 
 print b.core()
 vm.load(b.core(), b[b._extrns['.start']], 0xff)
