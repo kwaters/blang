@@ -4,6 +4,8 @@
 #include "ast.h"
 #include "blang.tab.h"
 #include "lrvalue.h"
+#include "tac.h"
+#include "vector.h"
 
 extern FILE *yyin;
 extern Ast *yy_program;
@@ -27,7 +29,8 @@ void yyerror(char *s)
 
 int main(int argc, char *argv[])
 {
-    int ret;
+    I i;
+    I sz;
 
     if (argc != 2) {
         fprintf(stderr, "usage: bc1 SOURCE\n");
@@ -41,17 +44,19 @@ int main(int argc, char *argv[])
     }
 
     yyin = f;
-    ret = yyparse();
-    printf("yyparse() = %d\n", ret);
-
-    if (ret)
+    if (yyparse())
         return 1;
 
+    lrvalue_pass(&yy_program);
+
     ast_show(yy_program);
 
-    printf("\n ==== \n\n");
-    lrvalue_pass(&yy_program);
-    ast_show(yy_program);
+    sz = vector_size(yy_program->prog.definitions);
+    for (i = 0; i < sz; i++) {
+        Ast *n = (Ast *)V_IDX(yy_program->prog.definitions, i);
+        if (n->kind == A_FDEF)
+            tac_function(n);
+    }
 
     ast_release_recursive(yy_program);
 

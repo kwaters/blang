@@ -11,7 +11,6 @@ static AstWalkFunc ast_post_func;
 static void *ast_data;
 
 static void ast_walk_vector(struct Vector *vector);
-static char *ast_show_name(I name);
 static void ast_show_string(char *s, I len);
 char *ast_show_bin(I op);
 char *ast_show_unary(I op);

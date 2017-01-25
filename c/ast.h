@@ -277,6 +277,7 @@ union Ast_ {
 typedef void (*AstWalkFunc)(Ast **node, void *data);
 void ast_walk(Ast **node, AstWalkFunc pre, AstWalkFunc post, void *data);
 void ast_show(Ast *root);
+char *ast_show_name(I name);
 Ast *ast_get(AstKind kind);
 void ast_release(Ast *node);
 void ast_release_recursive(Ast *ast);

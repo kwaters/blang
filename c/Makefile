@@ -14,6 +14,7 @@ SOURCES := \
     blang.yy.c \
     lrvalue.c \
     nametable.c \
+    tac.c \
     vector.c
 
 OBJECTS := $(SOURCES:.c=.o)
