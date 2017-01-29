@@ -119,18 +119,20 @@ while   return WHILE;
 }
 
  /* assignment */
-"="      yylval.binop = 0;      return ASSIGN;
-"=<<"    yylval.binop = SHIFTL; return ASSIGN;
-"=>>"    yylval.binop = SHIFTR; return ASSIGN;
-"=<="    yylval.binop = LTE;    return ASSIGN;
-"=>="    yylval.binop = GTE;    return ASSIGN;
-"==="    yylval.binop = EQ;     return ASSIGN;
-"=!="    yylval.binop = NEQ;    return ASSIGN;
-=[=|&-+%*/] {
-    /* TODO: This isn't right. */
-    yylval.binop = yytext[0];
-    return ASSIGN;
-}
+"="     yylval.binop = 0;        return ASSIGN;
+"=<<"   yylval.binop = O_SHIFTL; return ASSIGN;
+"=>>"   yylval.binop = O_SHIFTR; return ASSIGN;
+"=<="   yylval.binop = O_LTE;    return ASSIGN;
+"=>="   yylval.binop = O_GTE;    return ASSIGN;
+"==="   yylval.binop = O_EQ;     return ASSIGN;
+"=!="   yylval.binop = O_NEQ;    return ASSIGN;
+"=|"    yylval.binop = O_OR;     return ASSIGN;
+"=&"    yylval.binop = O_AND;    return ASSIGN;
+"=-"    yylval.binop = O_MINUS;  return ASSIGN;
+"=+"    yylval.binop = O_PLUS;   return ASSIGN;
+"=%"    yylval.binop = O_REM;    return ASSIGN;
+"=*"    yylval.binop = O_MUL;    return ASSIGN;
+"=/"    yylval.binop = O_DIV;    return ASSIGN;
 
  /* name */
 [a-z._A-Z][a-z._A-Z0-9]* {
