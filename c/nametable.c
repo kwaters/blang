@@ -1,7 +1,14 @@
 #include "nametable.h"
+
+#include <stdlib.h>
+
 #include "vector.h"
 
 #define NT_ENTRY_SIZE 3
+
+struct NameTableIter {
+    I i;
+};
 
 static struct Vector *nt_table = 0;
 static I nt_arg_count = 0;
@@ -111,4 +118,30 @@ void nt_check_defined()
             err("un", "Undefined variable");
         }
     }
+}
+
+struct NameTableIter *nt_iter_get(void)
+{
+    struct NameTableIter *it = malloc(sizeof(struct NameTableIter));
+    it->i = 0;
+    return it;
+}
+
+void nt_iter_release(struct NameTableIter *it)
+{
+    free(it);
+}
+
+struct NameTableEntry *nt_next(struct NameTableIter *it)
+{
+    struct NameTableEntry *name;
+    I size;
+
+    size = vector_size(nt_table);
+    if (it->i >= size)
+        return NULL;
+
+    name = (struct NameTableEntry *)&V_IDX(nt_table, it->i);
+    it->i += NT_ENTRY_SIZE;
+    return name;
 }

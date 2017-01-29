@@ -10,6 +10,8 @@ struct NameTableEntry
     I slot;     /* argument or auto slot */
 };
 
+struct NameTableIter;
+
 enum {
     NT_NEW = 0,
     NT_ARG = 1,
@@ -36,3 +38,8 @@ struct NameTableEntry *nt_lookup(Name name);
 
 /* Check that all names are defined. */
 void nt_check_defined();
+
+/* Iterate through all names in the nametable. */
+struct NameTableIter *nt_iter_get(void);
+void nt_iter_release(struct NameTableIter *it);
+struct NameTableEntry *nt_next(struct NameTableIter *it);
