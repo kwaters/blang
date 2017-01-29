@@ -3,13 +3,14 @@ LD := clang
 FLEX := flex
 BISON := bison
 
-CFLAGS := -Wall -Wextra -Wno-unused-parameter -Os -ggdb -std=c89
+CFLAGS := -Wall -Wextra -Wno-unused-parameter -O0 -ggdb -std=c89
 LDFLAGS :=
 
 PROGRAM := bc1
 SOURCES := \
     ast.c \
     bc1.c \
+    block.c \
     blang.tab.c \
     blang.yy.c \
     lrvalue.c \
