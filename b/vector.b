@@ -78,8 +78,10 @@ vcGrow(v, cap) {
     /* Copy over the old vector */
     sz = oldV[-1];
     i = 0;
-    while (i < sz)
-        newV[i++] = oldV[i];
+    while (i < sz) {
+        newV[i] = oldV[i];
+        i++;
+    }
     newV[-1] = sz;
 
     newV[-2] = cap;
