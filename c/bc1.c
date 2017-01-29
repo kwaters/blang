@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "ast.h"
+#include "backend.h"
 #include "blang.tab.h"
 #include "lrvalue.h"
 #include "tac.h"
@@ -49,13 +50,15 @@ int main(int argc, char *argv[])
 
     lrvalue_pass(&yy_program);
 
-    ast_show(yy_program);
+    backend_header();
 
     sz = vector_size(yy_program->prog.definitions);
     for (i = 0; i < sz; i++) {
         Ast *n = (Ast *)V_IDX(yy_program->prog.definitions, i);
-        if (n->kind == A_FDEF)
+        if (n->kind == A_FDEF) {
             tac_function(n);
+            backend_show(n);
+        }
     }
 
     ast_release_recursive(yy_program);

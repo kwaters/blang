@@ -9,10 +9,11 @@ LDFLAGS :=
 PROGRAM := bc1
 SOURCES := \
     ast.c \
+    backend.c \
     bc1.c \
-    block.c \
     blang.tab.c \
     blang.yy.c \
+    block.c \
     lrvalue.c \
     nametable.c \
     tac.c \
