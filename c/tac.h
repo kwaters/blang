@@ -22,7 +22,7 @@ enum {
 
     I_ASPACE, /* num */
     I_PARG, /* num, argbase, value */
-    I_CALL, /* func, argbase */
+    I_CALL, /* func, argbase, argcount */
 
     /* Terminators */
     I_J,  /* block */

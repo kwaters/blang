@@ -295,11 +295,11 @@ I tac_value(Ast *n)
                         tac_value((Ast *)V_IDX(n->call.arguments, i)));
             temp = value_get_temp();
             lhs = tac_value(n->call.function);
-            tac_add(temp, I_CALL, lhs, v, 0);
+            tac_add(temp, I_CALL, lhs, v, size);
         } else {
             temp = value_get_temp();
             lhs = tac_value(n->call.function);
-            tac_add(temp, I_CALL, lhs, 0, 0);
+            tac_add(temp, I_CALL, lhs, 0, size);
         }
         return temp;
 
