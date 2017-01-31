@@ -8,6 +8,7 @@
 #include "tac.h"
 
 static void backend_show_block(Block *block);
+static I backend_count_arg_slots(Ast *f);
 
 static char *optable[] = { "",
     "|",
@@ -34,11 +35,12 @@ void backend_header(void)
     printf("#include <stddef.h>\n");
     printf("#define ITOP(i) ((I*)((i) << 3))\n");
     printf("#define PTOI(p) ((I)(p) >> 3)\n");
-    printf("#define ASPACE(x) 0\n");
-    printf("#define PARG(a, b, c)\n");
+    printf("#define ASPACE(x) ({ I *ta = argp; argp += (x); (I)ta; })\n");
+    printf("#define PARG(a, b, c) ((I *)a)[b] = c\n");
+    printf("#define ARGCOUNT(count) I oargs[count]; I *argp = oargs;\n");
+    printf("#define POPARG(count) do { argp -= count; } while(0)\n");
     printf("typedef intptr_t I;\n");
     printf("typedef I (*FN)(I[]);\n");
-
 }
 
 static char *backend_mangle(Name name, I impl)
@@ -103,6 +105,8 @@ void backend_show(Ast *function)
     }
     nt_iter_release(it);
 
+    printf("    ARGCOUNT(%ld)\n", backend_count_arg_slots(function));
+
     size = tac_temp_count;
     if (size > 1) {
         for (i = 1; i < size; i++) {
@@ -129,8 +133,51 @@ void backend_show(Ast *function)
     printf("}\n");
     printf("I %s = ", backend_mangle(function->fdef.name, 0));
     printf("(I)%s;\n\n", backend_mangle(function->fdef.name, 1));
-
 }
+
+
+I backend_count_arg_slots(Ast *f)
+{
+    I i;
+    I j;
+    I size;
+    I *inst;
+    I inst_size;
+
+    I count;
+    I max_count;
+    Block *b;
+
+    count = max_count = 0;
+
+    size = vector_size(block_list);
+    for (i = 0; i < size; i++) {
+        b = (Block *)V_IDX(block_list, i);
+        inst_size = vector_size(b->instructions);
+        for (j = 0; j < inst_size; j += 5) {
+            inst = &V_IDX(b->instructions, j);
+            switch (inst[1]) {
+            case I_ASPACE:
+                count += inst[2];
+                if (count > max_count)
+                    max_count = count;
+                break;
+
+            case I_CALL:
+                count -= inst[4];
+                break;
+
+            default:
+                ;
+            }
+        }
+
+        if (count != 0)
+            ice("Unusued function arguments.");
+    }
+    return max_count;
+}
+
 
 static void backend_escape(I fst, I snd, I *inst)
 {
@@ -237,9 +284,9 @@ void backend_show_block(Block *block)
 
         case I_CALL:
             if (inst[3] == 0)
-                backend_print(inst, "((FN)$2t)(NULL);");
+                backend_print(inst, "((FN)$2t)(NULL);  POPARG($4d);");
             else
-                backend_print(inst, "((FN)$2t)((I *)$3t);");
+                backend_print(inst, "((FN)$2t)((I *)$3t);  POPARG($4d);");
             break;
 
         case I_RET:
