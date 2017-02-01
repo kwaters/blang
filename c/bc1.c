@@ -58,6 +58,8 @@ int main(int argc, char *argv[])
         if (n->kind == A_FDEF) {
             tac_function(n);
             backend_show(n);
+        } else {
+            backend_xdef(n);
         }
     }
 

@@ -7,8 +7,10 @@
 #include "nametable.h"
 #include "tac.h"
 
-static void backend_show_block(Block *block);
 static I backend_count_arg_slots(Ast *f);
+static void backend_initializer(Ast *n);
+static char *backend_mangle(Name name, I impl);
+static void backend_show_block(Block *block);
 
 static char *optable[] = { "",
     "|",
@@ -41,6 +43,62 @@ void backend_header(void)
     printf("#define POPARG(count) do { argp -= count; } while(0)\n");
     printf("typedef intptr_t I;\n");
     printf("typedef I (*FN)(I[]);\n");
+}
+
+void backend_xdef(Ast *xdef)
+{
+    I i;
+    I size;
+    I array_size;
+
+    if (xdef->kind != A_XDEF)
+        ice("Expected XDEF node.");
+
+    size = vector_size(xdef->xdef.initializer);
+    if (xdef->xdef.size == -1) {
+        /* scalar */
+        if (size == 0) {
+            printf("I %s;", backend_mangle(xdef->xdef.name, 0));
+        } else if (size == 1) {
+            printf("I %s = ", backend_mangle(xdef->xdef.name, 0));
+            backend_initializer((Ast *)V_IDX(xdef->xdef.initializer, 0));
+            printf(";\n");
+        } else {
+            ice("Unimplemented \"vector\" scalar.");
+        }
+    } else {
+        /* array */
+        array_size = size > xdef->xdef.size ? size : xdef->xdef.size;
+        printf("I %s[%ld]", backend_mangle(xdef->xdef.name, 0), array_size);
+        if (size > 0) {
+            printf(" = { ");
+            backend_initializer((Ast *)V_IDX(xdef->xdef.initializer, 0));
+            for (i = 1; i < size; i++) {
+                printf(", ");
+                backend_initializer((Ast *)V_IDX(xdef->xdef.initializer, i));
+            }
+            printf(" }");
+        }
+        printf(";\n");
+    }
+}
+
+void backend_initializer(Ast *n)
+{
+    switch (n->kind) {
+    case A_NAME:
+        ice("Initialization of external variables with addresses of other"
+            "externals is not possible due to a loader deficiency.\n");
+        break;
+    case A_NUM:
+        printf("%ld", n->num.num);
+        break;
+    case A_STR:
+        printf("/* STR */ 0");
+        break;
+    default:
+        ice("Unexpeted node kind.");
+    }
 }
 
 static char *backend_mangle(Name name, I impl)

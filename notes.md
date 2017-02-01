@@ -1,13 +1,17 @@
 TODO
 ----
-Variable definitions in the C backend.
 Makefile to support B compilation.
 File handling in lexer.b.
 Token dumping in C implementation for testing against B lexer.
 
-Defer "extrn" hack to post C phase.
+Auto arrays.
 
-Performance Optimzation
+Defer to post C phase:
+    - "extern" hack
+    - Line number tracking
+    - Initialization of external variables with addresses of other externals
+
+Performance Optimization
 -----------------------
 - Use 61-bit integers with the bottom 3 bits always zeroed.  Sort of like
   tagged arithmatic with only one tag type.
