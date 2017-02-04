@@ -4,12 +4,14 @@
 
 #include "base.h"
 #include "block.h"
+#include "call_count.h"
 #include "nametable.h"
 #include "tac.h"
 
 static void backend_initializer(Ast *n);
 static char *backend_mangle(Name name, I impl);
 static void backend_show_block(Block *block);
+static struct Vector *string_table;
 
 static char *optable[] = { "",
     "|",
@@ -42,6 +44,19 @@ void backend_header(void)
     printf("#define POPARG(count) do { argp -= count; } while(0)\n");
     printf("typedef intptr_t I;\n");
     printf("typedef I (*FN)(I[]);\n");
+}
+
+static void backend_show_string(I *inst)
+{
+    I i;
+    I size = vector_size(string_table);
+    for (i = 0; i < size; i += 2) {
+        if ((I *)V_IDX(string_table, i) == inst) {
+            printf("str%ld", V_IDX(string_table, i + 1));
+            return;
+        }
+    }
+    ice("Missing string.\n");
 }
 
 void backend_xdef(Ast *xdef)
@@ -93,7 +108,8 @@ void backend_initializer(Ast *n)
         printf("%ld", n->num.num);
         break;
     case A_STR:
-        printf("/* STR */ 0");
+        ice("Initialization of external varible with string.");
+        /* We need to initialize with the divided pointer. */
         break;
     default:
         ice("Unexpeted node kind.");
@@ -128,6 +144,60 @@ static char *backend_mangle(Name name, I impl)
     return s;
 }
 
+static void backend_emit_string(I *inst)
+{
+    I x;
+    I i;
+    I string_num = vector_size(string_table) / 2;
+    I len = inst[3];
+    char *comma = "";
+    char *s = (char *)inst[2];
+
+    vector_push(&string_table, (I)inst);
+    vector_push(&string_table, string_num);
+
+    printf("    static I str%ld[] = { ", string_num);
+    x = 0;
+    for (i = 0; i < len; i++) {
+        x |= (I)s[i] << (i % 8 * 8);
+        if (i % 8 == 7) {
+            printf("%s%ldl", comma, x);
+            comma = ", ";
+            x = 0;
+        }
+    }
+    if (x % 8 != 7) {
+        printf("%s%ldl", comma, x);
+    }
+    printf(" };\n");
+}
+
+static void backend_walk_strings(void)
+{
+    I i;
+    I j;
+    I size;
+    I block_size;
+    I *inst;
+    Block *b;
+
+    if (!string_table)
+        string_table = vector_get();
+    if (vector_size(string_table) != 0)
+        ice("Unexpected strings in table.");
+
+    block_size = vector_size(block_list);
+    for (i = 0; i < block_size; i++) {
+        b = (Block *)V_IDX(block_list, i);
+        size = vector_size(b->instructions);
+        for (j = 0; j < size; j+= 5) {
+            inst = &V_IDX(b->instructions, j);
+            if (inst[1] == I_STR)
+                backend_emit_string(inst);
+        }
+    }
+};
+
 void backend_show(Ast *function)
 {
     struct NameTableIter *it;
@@ -140,6 +210,8 @@ void backend_show(Ast *function)
         ice("Expected FDEF node.");
 
     printf("I %s(I *args) {\n", backend_mangle(function->fdef.name, 1));
+
+    backend_walk_strings();
 
     it = nt_iter_get();
     while ((name = nt_next(it))) {
@@ -190,6 +262,9 @@ void backend_show(Ast *function)
     printf("}\n");
     printf("I %s = ", backend_mangle(function->fdef.name, 0));
     printf("(I)%s;\n\n", backend_mangle(function->fdef.name, 1));
+
+    /* reset string table */
+    vector_set_size(&string_table, 0);
 }
 
 static void backend_escape(I fst, I snd, I *inst)
@@ -223,6 +298,9 @@ static void backend_escape(I fst, I snd, I *inst)
     case 'U':
         printf("%s", uoptable[arg]);
         break;
+    case 's':
+        backend_show_string(inst);
+        break;
     default:
         ice("Bad template");
     }
@@ -252,6 +330,7 @@ void backend_show_block(Block *block)
 {
     char *patterns[] = {
         [I_NUM] = "$2d;",
+        [I_STR] = "PTOI($2s);",
         [I_ARG] = "PTOI(&args[$2S]);",
         [I_AUTO] = "PTOI(&$2N);",
         [I_EXTRN] = "PTOI(&$2N);",
@@ -289,10 +368,6 @@ void backend_show_block(Block *block)
             }
             backend_print(inst, "default: goto $4B;");
             backend_print(inst, "}");
-            break;
-
-        case I_STR:
-            backend_print(inst, "/* STR */ 0;");
             break;
 
         case I_CALL:
