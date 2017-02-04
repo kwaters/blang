@@ -1,5 +1,7 @@
 .PHONY: all
 
+.SECONDARY:
+
 get-D = $(subst $(SRC)/,,$(dir $(lastword $(MAKEFILE_LIST))))
 
 include $(SRC)/mk/rules.mk
