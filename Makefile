@@ -1,9 +1,16 @@
-MAKEFLAGS += -rR --no-print-directory
+MAKEFLAGS += -rR
 
-.PHONY: main-make
+export OUTPUT := build
+export SRC := ..
 
-%: main-make
-	@:
+.PHONY: main-make clean
 
 main-make:
-	@$(MAKE) -f mk/root.mk $(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)
+	@[[ -d $(OUTPUT) ]] || mkdir -p $(OUTPUT)
+	@$(MAKE) -f $(SRC)/mk/root.mk -C $(OUTPUT) $(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)
+
+all: main-make
+	@:
+
+clean:
+	rm -r $(OUTPUT)

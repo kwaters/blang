@@ -4,18 +4,16 @@ CC := clang
 FLEX := flex
 LD := clang
 
-CFLAGS := -Wall -Wextra -Wno-unused-parameter -O0 -ggdb -std=c89 -I c -I $(OUTPUT)/c
+CFLAGS := -Wall -Wextra -Wno-unused-parameter -O0 -ggdb -std=c89 -I c -I $(SRC)/c
 
-$(OUTPUT)/%.o: %.c
-	$(CC) -MMD -o $@ -c $(CFLAGS) $<
-$(OUTPUT)/%.o: $(OUTPUT)/%.c
+%.o: %.c
 	$(CC) -MMD -o $@ -c $(CFLAGS) $<
 
-$(OUTPUT)/%.c: %.b $(OUTPUT)/bc1
-	$(OUTPUT)/bc1 $< >$@
+%.c: %.b bc1
+	./bc1 $< >$@
 
-$(OUTPUT)/%.tab.c: %.y
+%.tab.c: %.y
 	$(BISON) -o $@ -d -v $<
 
-$(OUTPUT)/%.yy.c: %.l
+%.yy.c: %.l
 	$(FLEX) -o $@ $<
