@@ -252,7 +252,7 @@ I tac_value(Ast *n)
         temp = value_get_temp();
         tac_add(temp, I_BIN, O_PLUS, v, rhs);
         tac_add(0, I_STORE, lhs, temp, 0);
-        return n->kind ? temp : v;
+        return n->kind == A_PRE ? temp : v;
 
     case A_UNARY:
         lhs = tac_value(n->unary.expr);
