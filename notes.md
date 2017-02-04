@@ -1,6 +1,5 @@
 TODO
 ----
-Makefile to support B compilation.
 String support in C backend.
 File handling in lexer.b.
 Token dumping in C implementation for testing against B lexer.
