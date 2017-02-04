@@ -162,8 +162,10 @@ I tac_value(Ast *n)
         tac_value(n->while_.statement);
         tac_add(0, I_J, (I)b, 0, 0);
 
-        block_current = block_get();
-        tac_add(0, I_IF, (I)v, (I)yes, (I)block_current);
+        no = block_get();
+        block_current = b;
+        tac_add(0, I_IF, (I)v, (I)yes, (I)no);
+        block_current = no;
         return 0;
 
     case A_SWITCH:
