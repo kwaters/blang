@@ -314,7 +314,7 @@ value: '(' value ')' {
         $$->unary.expr = $2;
         $$->unary.op = U_NOT;
     }
-    | '&' value {
+    | '&' value %prec UNARY_PREC {
         $$ = ast_get(A_ADDR);
         $$->addr.expr = $2;
     }
