@@ -8,6 +8,7 @@ bc1 += $(D)bc1.o
 bc1 += $(D)blang.tab.o
 bc1 += $(D)blang.yy.o
 bc1 += $(D)block.o
+bc1 += $(D)call_count.o
 bc1 += $(D)lrvalue.o
 bc1 += $(D)nametable.o
 bc1 += $(D)tac.o

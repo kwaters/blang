@@ -7,7 +7,6 @@
 #include "nametable.h"
 #include "tac.h"
 
-static I backend_count_arg_slots(Ast *f);
 static void backend_initializer(Ast *n);
 static char *backend_mangle(Name name, I impl);
 static void backend_show_block(Block *block);
@@ -163,7 +162,7 @@ void backend_show(Ast *function)
     }
     nt_iter_release(it);
 
-    printf("    ARGCOUNT(%ld)\n", backend_count_arg_slots(function));
+    printf("    ARGCOUNT(%ld)\n", call_count(function));
 
     size = tac_temp_count;
     if (size > 1) {
@@ -192,50 +191,6 @@ void backend_show(Ast *function)
     printf("I %s = ", backend_mangle(function->fdef.name, 0));
     printf("(I)%s;\n\n", backend_mangle(function->fdef.name, 1));
 }
-
-
-I backend_count_arg_slots(Ast *f)
-{
-    I i;
-    I j;
-    I size;
-    I *inst;
-    I inst_size;
-
-    I count;
-    I max_count;
-    Block *b;
-
-    count = max_count = 0;
-
-    size = vector_size(block_list);
-    for (i = 0; i < size; i++) {
-        b = (Block *)V_IDX(block_list, i);
-        inst_size = vector_size(b->instructions);
-        for (j = 0; j < inst_size; j += 5) {
-            inst = &V_IDX(b->instructions, j);
-            switch (inst[1]) {
-            case I_ASPACE:
-                count += inst[2];
-                if (count > max_count)
-                    max_count = count;
-                break;
-
-            case I_CALL:
-                count -= inst[4];
-                break;
-
-            default:
-                ;
-            }
-        }
-
-        if (count != 0)
-            ice("Unusued function arguments.");
-    }
-    return max_count;
-}
-
 
 static void backend_escape(I fst, I snd, I *inst)
 {
