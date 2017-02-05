@@ -7,3 +7,4 @@ brt += $(D)brtcore.o
 brt += $(D)brtio.o
 brt += $(D)brtmain.o
 brt += $(D)print.o
+brt += $(D)string.o
