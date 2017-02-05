@@ -72,7 +72,7 @@ void backend_xdef(Ast *xdef)
     if (xdef->xdef.size == -1) {
         /* scalar */
         if (size == 0) {
-            printf("I %s;", backend_mangle(xdef->xdef.name, 0));
+            printf("I %s;\n", backend_mangle(xdef->xdef.name, 0));
         } else if (size == 1) {
             printf("I %s = ", backend_mangle(xdef->xdef.name, 0));
             backend_initializer((Ast *)V_IDX(xdef->xdef.initializer, 0));
@@ -83,7 +83,7 @@ void backend_xdef(Ast *xdef)
     } else {
         /* array */
         array_size = size > xdef->xdef.size ? size : xdef->xdef.size;
-        printf("I %s[%ld]", backend_mangle(xdef->xdef.name, 0), array_size);
+        printf("I %s[%ld]", backend_mangle(xdef->xdef.name, 1), array_size);
         if (size > 0) {
             printf(" = { ");
             backend_initializer((Ast *)V_IDX(xdef->xdef.initializer, 0));
@@ -94,6 +94,14 @@ void backend_xdef(Ast *xdef)
             printf(" }");
         }
         printf(";\n");
+
+        printf("I %s;\n", backend_mangle(xdef->xdef.name, 0));
+        printf("void __attribute__((constructor)) %s(void)\n",
+               backend_mangle(xdef->xdef.name, 2));
+        printf("{\n");
+        printf("    %s = ", backend_mangle(xdef->xdef.name, 0));
+        printf("PTOI(%s);\n", backend_mangle(xdef->xdef.name, 1));
+        printf("}\n");
     }
 }
 
@@ -123,7 +131,9 @@ static char *backend_mangle(Name name, I impl)
     int i;
     int c;
 
-    if (impl)
+    if (impl >= 2)
+        *p++ = 'S';
+    else if (impl >= 1)
         *p++ = 'I';
 
     for (i = 0; i < 8; i++) {
