@@ -10,7 +10,8 @@ CFLAGS := -Wall -Wextra -Wno-unused-parameter -O0 -ggdb -std=c89 -I c -I $(SRC)/
 	$(CC) -MMD -o $@ -c $(CFLAGS) $<
 
 %.c: %.b bc1
-	./bc1 $< >$@
+	./bc1 $< >$@ || \
+	(rm -f $@; exit 1)
 
 %.tab.c: %.y
 	$(BISON) -o $@ -d -v $<
