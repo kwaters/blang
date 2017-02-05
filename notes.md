@@ -1,6 +1,5 @@
 TODO
 ----
-File handling in lexer.b.
 Token dumping in C implementation for testing against B lexer.
 
 Auto arrays.
