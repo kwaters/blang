@@ -1,6 +1,7 @@
 #include "nametable.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "vector.h"
 
@@ -114,7 +115,7 @@ void nt_check_defined()
 
     for (i = 0; i < size; i++) {
         if (!(table[i].flags & NT_DEF_FLAG)) {
-            /* TODO: supposed to report name here. */
+            fprintf(stderr, "%s ", ast_show_name(table[i].name));
             err("un", "Undefined variable");
         }
     }
