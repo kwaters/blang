@@ -20,5 +20,7 @@ I BI_lchar(I *args)
     I i = args[1];
     I c = args[2];
     string[i] = c;
+
+    return 0;
 }
 I B_lchar = (I)BI_lchar;

@@ -4,7 +4,7 @@ CC := clang
 FLEX := flex
 LD := clang
 
-CFLAGS := -Wall -Wextra -Wno-unused-parameter -O0 -ggdb -std=c89 -I c -I $(SRC)/c
+CFLAGS := -Wall -Wextra -Wno-unused-parameter -Wno-unused-label -Wno-unused-variable -O0 -ggdb -std=c89 -I c -I $(SRC)/c
 
 %.o: %.c
 	$(CC) -MMD -o $@ -c $(CFLAGS) $<
