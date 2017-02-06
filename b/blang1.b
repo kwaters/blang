@@ -7,9 +7,14 @@ ice(s) {
     exit();
 }
 
+/* TODO: local arrays are unsupported. */
+tok[3];
+
 main() {
     extrn printf, putchar, argv, exit;
     extrn ibOpen, ibGet;
+    extrn lMain, lPrint;
+    extrn tok;
 
     auto c;
 
@@ -19,6 +24,14 @@ main() {
     }
 
     ibOpen(argv[2]);
+
+    /*
     while ((c = ibGet()) != '*e')
         putchar(c);
+    */
+    while (!lMain(tok)) {
+        lPrint(tok);
+        if (tok[0] == '*e')
+            return;
+    }
 }

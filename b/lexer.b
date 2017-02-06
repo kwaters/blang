@@ -61,10 +61,14 @@ lIsIdent(c) {
 
 /* Get the next character of the input, or '*e' if it's empty. */
 lGetC() {
+    extrn ibGet;
+    return (ibGet());
 }
 
 /* Return the last character to the input. */
 lReplace(char) {
+    extrn ibUnget;
+    ibUnget(char);
 }
 
 lError(char) {
@@ -167,13 +171,13 @@ lMain(tok) {
         return (lChar(tok));
 
     case '*"':
-        return (lString());
+        return (lString(tok));
 
     case '/':
         lError("ICE. *"/*" should be consumed by lEatWhte()");
     }
 
-    if (!lOp(tok, 0))
+    if (!lOp(c, tok, 0))
         return (0);
 
     lError("Unexpected character");
@@ -203,34 +207,35 @@ lName(c, tok) {
     extrn T_AUTO, T_CASE, T_ELSE, T_EXTRN, T_GOTO, T_IF, T_RETURN, T_SWITCH,
           T_WHILE, T_NAME;
     extrn lchar;
-    extrn lIsIdent, lReplace;
+    extrn lIsIdent, lReplace, lGetC;
     auto i;
 
     i = 0;
     while (lIsIdent(c)) {
         if (i < 8)
             lchar(tok + 1, i++, c);
+        c = lGetC();
     }
     lReplace(c);
 
     /* Test for keywords. */
-    if (tok[1] == 'auto' & tok[2] == 0)
+    if (tok[1] == 'auto')
         tok[0] = T_AUTO;
-    else if (tok[1] == 'case' & tok[2] == 0)
+    else if (tok[1] == 'case')
         tok[0] = T_CASE;
-    else if (tok[1] == 'else' & tok[2] == 0)
+    else if (tok[1] == 'else')
         tok[0] = T_ELSE;
-    else if (tok[1] == 'extr' & tok[2] == 'n')
+    else if (tok[1] == 'extrn')
         tok[0] = T_EXTRN;
-    else if (tok[1] == 'goto' & tok[2] == 0)
+    else if (tok[1] == 'goto')
         tok[0] = T_GOTO;
-    else if (tok[1] == 'if' & tok[2] == 0)
+    else if (tok[1] == 'if')
         tok[0] = T_IF;
-    else if (tok[1] == 'retu' & tok[2] == 'rn')
+    else if (tok[1] == 'return')
         tok[0] = T_RETURN;
-    else if (tok[1] == 'swit' & tok[2] == 'ch')
+    else if (tok[1] == 'switch')
         tok[0] = T_SWITCH;
-    else if (tok[1] == 'whil' & tok[2] == 'e')
+    else if (tok[1] == 'while')
         tok[0] = T_WHILE;
     else
         tok[0] = T_NAME;
@@ -281,7 +286,7 @@ lChar(tok) {
             lError("Newline not allowed in character constant");
         }
 break:
-        if (i < 4)
+        if (i < 8)
             lchar(tok + 1, i++, c);
     }
 exit:
@@ -299,9 +304,10 @@ lString(tok) {
     extrn T_STRING;
     extrn getvec, rlsevec, memcpy, lchar;
     extrn lGetC, lEscape, lError;
+    extrn printf;
     auto i, c, s, newS, limit;
 
-    limit = 8;
+    limit = 4;
     s = getvec(limit + 1) + 1;
 
     i = 0;
@@ -321,7 +327,8 @@ lString(tok) {
             lError("Newline not allowed in character constant");
         }
 break:
-        if (i + 1 > 4 * limit) {
+        /* Reserve space for the terminating '*e' */
+        if (i + 2 > 8 * limit) {
             newS = getvec(limit * 2 + 1) + 1;
             memcpy(newS, s, limit);
             rlsevec(s - 1, limit);
@@ -338,20 +345,19 @@ exit:
 
     tok[0] = T_STRING;
     tok[1] = s;
-    tok[2] = i;
+    tok[2] = i + 1;
     return (0);
 }
 
 /* Parse a unary or binary operator. Recurses for assignment operators. */
-lOp(tok, assign) {
+lOp(c, tok, assign) {
     extrn T_ASSIGN, T_NEQ, T_EQ, T_LTE, T_GTE, T_SHIFTL, T_SHIFTR,
           T_DEC, T_INC;
     extrn lGetC, lReplace;
-    auto c, peek;
+    auto peek;
 
     tok[0] = 0;
 
-    c = lGetC();
     switch (c) {
     case '**':
     case '/':
@@ -395,7 +401,7 @@ lOp(tok, assign) {
             }
             goto break;
         } else {
-            return (lOp(tok, 1));
+            return (lOp(lGetC(), tok, 1));
         }
 
     case '<':
@@ -440,4 +446,118 @@ break:
         return (0);
     }
     return (tok[0] == 0);
+}
+
+
+lPrint(tok) {
+    extrn printf, putchar;
+    extrn lPTKind, lPStr;
+    auto x, kind;
+
+    kind = tok[0];
+    lPTKind(kind);
+
+    switch (kind) {
+    case 258:  /* ASSIGN */
+        printf("  ");
+        if (tok[1])
+            lPTKind(tok[1]);
+        goto break;
+
+    case 259:  /* CHAR */
+    case 267:  /* NUMBER */
+        printf("  %d*n", tok[1]);
+        return;
+
+    case 265:  /* NAME */
+        printf("  ");
+        x = tok[1];
+        while (x > 0) {
+            putchar(x & 0377);
+            x =>> 8;
+        }
+        goto break;
+
+    case 270:  /* STRING */
+        printf("  ");
+        lPStr(tok[1], tok[2]);
+        goto break;
+    }
+break:
+    printf("*n");
+}
+
+/* Print token kind padded out to 6 characters. */
+lPTKind(kind) {
+    extrn printf, ice;
+
+    if (kind == '*e') {
+        printf("EOF     ");
+        return;
+    } else if (kind < 256) {
+        printf("'%c'     ", kind);
+        return;
+    }
+
+    switch (kind) {
+    case 258: printf("T_ASSIGN"); return;
+    case 259: printf("T_CHAR  "); return;
+    case 260: printf("T_DEC   "); return;
+    case 261: printf("T_EQ    "); return;
+    case 262: printf("T_GTE   "); return;
+    case 263: printf("T_INC   "); return;
+    case 264: printf("T_LTE   "); return;
+    case 265: printf("T_NAME  "); return;
+    case 266: printf("T_NEQ   "); return;
+    case 267: printf("T_NUMBER"); return;
+    case 268: printf("T_SHIFTL"); return;
+    case 269: printf("T_SHIFTR"); return;
+    case 270: printf("T_STRING"); return;
+    case 271: printf("T_AUTO  "); return;
+    case 272: printf("T_CASE  "); return;
+    case 273: printf("T_ELSE  "); return;
+    case 274: printf("T_EXTRN "); return;
+    case 275: printf("T_GOTO  "); return;
+    case 276: printf("T_IF    "); return;
+    case 277: printf("T_RETURN"); return;
+    case 278: printf("T_SWITCH"); return;
+    case 279: printf("T_WHILE "); return;
+    }
+    ice("Invalid token kind.");
+}
+
+/* print escaped string */
+lPStr(base, len)
+{
+    extrn putchar, printf, char;
+    auto i, c;
+
+    putchar('"');
+
+    i = 0;
+    while (i < len) {
+        c = char(base, i++);
+        switch (c) {
+        case '**': printf("****"); goto loop;
+        case '*'': printf("***'"); goto loop;
+        case '*"': printf("***""); goto loop;
+        }
+
+        if (c >= 040 & c <= 0177) {
+            putchar(c);
+        } else {
+            putchar('**');
+            switch (c) {
+            case '*0': putchar('0'); goto loop;
+            case '*e': putchar('e'); goto loop;
+            case '*t': putchar('t'); goto loop;
+            case '*n': putchar('n'); goto loop;
+            }
+            /* default case */
+            putchar('?');
+        }
+loop: ;
+    }
+
+    putchar('"');
 }
