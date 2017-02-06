@@ -8,12 +8,17 @@ ice(s) {
 }
 
 main() {
+    extrn printf, putchar, argv, exit;
     extrn ibOpen, ibGet;
-    extrn putchar;
 
     auto c;
 
-    ibOpen("b/lexer.b");
+    if (argv[0] != 2) {
+        printf("Usage: blang1 INPUT*n");
+        exit();
+    }
+
+    ibOpen(argv[2]);
     while ((c = ibGet()) != '*e')
         putchar(c);
 }
