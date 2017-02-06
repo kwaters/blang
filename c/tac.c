@@ -100,6 +100,8 @@ I tac_value(Ast *n)
     Block *b;
     Block *yes;
     Block *no;
+    Block *yes_exit;
+    Block *no_exit;
     struct NameTableEntry *name;
     struct Vector *old_case_table;
 
@@ -139,17 +141,19 @@ I tac_value(Ast *n)
 
         block_current = yes = block_get();
         tac_value(n->ife.then);
+        yes_exit = block_current;
 
         block_current = no = block_get();
         tac_value(n->ife.else_);
+        no_exit = block_current;
 
         block_current = b;
         tac_add(0, I_IF, (I)v, (I)yes, (I)no);
 
         b = block_get();
-        block_current = yes;
+        block_current = yes_exit;
         tac_add(0, I_J, (I)b, 0, 0);
-        block_current = no;
+        block_current = no_exit;
         tac_add(0, I_J, (I)b, 0, 0);
         block_current = b;
         return 0;
