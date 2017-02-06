@@ -30,7 +30,7 @@ static char *optable[] = { "",
     "*",
     "/"
 };
-static char *uoptable[] = { "", "-", "~" };
+static char *uoptable[] = { "", "-", "!" };
 
 void backend_header(void)
 {
