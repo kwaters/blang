@@ -53,7 +53,7 @@ stDummy(node) {
     case  7:  /* A_SEQ */
     case  8:  /* A_IFE */
     case  9:  /* A_WHILE */
-    case  10:  /* A_SWITCH */
+    case 10:  /* A_SWITCH */
     case 11:  /* A_GOTO */
     case 12:  /* A_VRTRN */
     case 13:  /* A_RTRN */
@@ -96,7 +96,7 @@ stWalk(n, pre, post, data) {
     case  7:  /* A_SEQ */
     case  8:  /* A_IFE */
     case  9:  /* A_WHILE */
-    case  10:  /* A_SWITCH */
+    case 10:  /* A_SWITCH */
     case 11:  /* A_GOTO */
     case 12:  /* A_VRTRN */
     case 13:  /* A_RTRN */
