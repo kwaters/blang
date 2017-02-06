@@ -2,7 +2,7 @@
 
 /* Token format.
 
-    KIND VALUE[0] VALUE[1]
+    KIND VALUE[0] VALUE[1] LINENO
 */
 
 /* Token kinds. */
@@ -28,6 +28,8 @@ T_IF     276;
 T_RETURN 277;
 T_SWITCH 278;
 T_WHILE  279;
+
+lLineNo 1;
 
 lIsAlpha(c) {
     if (c >= 'A' & c <= 'Z')
@@ -78,14 +80,17 @@ lError(char) {
 
 /* Eat whitespace and comments. */
 lEatWhte(tok) {
-    extrn lGetC, lReplace, lComment;
+    extrn lGetC, lReplace, lComment, lLineNo;
     auto c, peek;
 
 loop:
     switch (c = lGetC()) {
     case ' ':
     case '*t':
+        goto loop;
+
     case '*n':
+        lLineNo++;
         goto loop;
 
     case '/':
@@ -94,9 +99,11 @@ loop:
             goto loop;
         }
 
-        /* Token is "/" not followed by "*". */
+        /* Token is "/" not followed by "*".  This token needs its line number
+         * set because it hasn't been set in lMain() yet. */
         lReplace(peek);
         tok[0] = '/';
+        tok[3] = lLineNo;
         return (0);
     }
 
@@ -106,7 +113,7 @@ loop:
 
 /* Consume a comment after "/" "*". */
 lComment() {
-    extrn lGetC, lError;
+    extrn lGetC, lError, lLineNo;
     auto c;
 
 state1:
@@ -115,6 +122,9 @@ state1:
         goto state2;
     case '*e':
         goto error;
+    case '*n':
+        lLineNo++;
+        /* fallthrough */
     }
     goto state1;
 
@@ -126,6 +136,9 @@ state2:
         goto state2;
     case '*e':
         goto error;
+    case '*n':
+        lLineNo++;
+        /* fallthrough */
     }
     goto state1;
 
@@ -136,13 +149,17 @@ error:
 /* Get the next token. */
 lMain(tok) {
     extrn lEatWhte, lChar, lError, lGetC, lIsAlpha, lIsDigit, lName, lNumber,
-          lOp, lString;
+          lOp, lString, lLineNo;
     auto c;
 
     tok[1] = tok[2] = 0;
 
     if (!lEatWhte(tok))
         return (0);
+
+    /* After consuming whitespace we know the token will start on the current
+     * line. */
+    tok[3] = lLineNo;
 
     c = lGetC();
     if (lIsDigit(c))
@@ -456,6 +473,7 @@ lPrint(tok) {
 
     kind = tok[0];
     lPTKind(kind);
+    printf(" (%d)", tok[3]);
 
     switch (kind) {
     case 258:  /* ASSIGN */

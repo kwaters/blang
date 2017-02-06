@@ -8,7 +8,7 @@ ice(s) {
 }
 
 /* TODO: local arrays are unsupported. */
-tok[3];
+tok[4];
 
 main() {
     extrn printf, putchar, argv, exit;
