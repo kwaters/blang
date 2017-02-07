@@ -5,6 +5,9 @@
     KIND VALUE[0] VALUE[1] LINENO
 */
 
+/* Size in words of a token. */
+lTokenSz 4;
+
 /* Token kinds. */
 T_ASSIGN 258;
 T_CHAR   259;
@@ -218,6 +221,8 @@ lNumber(c, tok) {
 
     tok[0] = T_NUMBER;
     tok[1] = num;
+
+    return (0);
 }
 
 lName(c, tok) {
@@ -545,8 +550,7 @@ lPTKind(kind) {
 }
 
 /* print escaped string */
-lPStr(base, len)
-{
+lPStr(base, len) {
     extrn putchar, printf, char;
     auto i, c;
 

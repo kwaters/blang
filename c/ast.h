@@ -125,8 +125,8 @@ struct AstVar {
 };
 struct AstLabel {
     AstKind kind;
-    Ast *statement;
     Name name;
+    Ast *statement;
 };
 struct AstCLabel {
     AstKind kind;
