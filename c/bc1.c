@@ -19,7 +19,8 @@ void ice(char *s)
 
 void err(char *code, char *s)
 {
-    fprintf(stderr, "%s: %s\n", code, s);
+    extern int yylineno;
+    fprintf(stderr, "%s (%d): %s\n", code, yylineno, s);
     exit(1);
 }
 

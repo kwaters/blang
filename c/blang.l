@@ -1,3 +1,5 @@
+%option yylineno
+
 %{
 #include "base.h"
 #include "blang.tab.h"
