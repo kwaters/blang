@@ -1,6 +1,7 @@
 TODO
 ----
-Token dumping in C implementation for testing against B lexer.
+AST dumping for B implementation.
+Command line parsing for blang1.
 
 Auto arrays.
 
@@ -35,3 +36,4 @@ Proposed Options
     -fshort-circuit
     -fextrn-call
     -dump-tokens
+    -dump-ast
