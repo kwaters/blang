@@ -10,6 +10,25 @@ ice(s) {
 /* TODO: local arrays are unsupported. */
 tok[4];
 
+ident 0;
+f(n) {
+    extrn printf;
+    extrn ident;
+    extrn stApply;
+    auto i;
+
+    i = 0;
+    while (i++ < ident)
+        printf("  ");
+
+    printf("NODE: %d (%d)*n", *n, (*n)[0]);
+
+    ident++;
+    stApply(*n, f);
+    ident--;
+
+}
+
 main() {
     extrn printf, putchar, argv, exit;
     extrn ibOpen, ibGet;
@@ -17,7 +36,10 @@ main() {
     extrn tok;
     extrn yMain;
 
+    extrn f, stApply, stRlseR;
+
     auto c;
+    auto program;
 
     if (argv[0] != 2) {
         printf("Usage: blang1 INPUT*n");
@@ -37,5 +59,7 @@ main() {
             return;
     }
     */
-    yMain();
+    program = yMain();
+    stApply(program, f);
+    stRlseR(program);
 }

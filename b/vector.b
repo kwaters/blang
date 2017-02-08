@@ -108,3 +108,13 @@ vcPush(v, x) {
 vcPop(vec) {
     return (vec[--vec[-1]]);
 }
+
+/* For every element of |vec|, call f(&element). */
+vcApply(vec, f) {
+    extrn vcSize;
+    auto i, sz;
+    i = 0;
+    sz = vcSize(vec);
+    while (i < sz)
+        f(&vec[i++]);
+}

@@ -49,11 +49,13 @@ yExpect(kind) {
 }
 
 yMain() {
-    extrn vcGet, vcPush;
     extrn T_NAME;
+    extrn A_PROG;
+    extrn vcGet, vcPush;
     extrn yShift, yDef, yExpect, yTok;
+    extrn stGet;
 
-    auto program;
+    auto program, n;
 
     /* Prime the two token lookahead. */
     yShift();
@@ -64,15 +66,21 @@ yMain() {
         vcPush(&program, yDef());
     }
     yExpect('*e');
+
+    n = stGet(A_PROG, 1);
+    n[2] = program;
+    return (n);
 }
 
 yDef() {
-    extrn ice;
     extrn T_NUMBER, T_NAME;
+    extrn A_XDEF;
+    extrn ice;
     extrn yTok, yShift, yExpect, yFdef, yIval, yError, yNConst;
+    extrn stGet;
     extrn vcGet, vcPush;
 
-    auto name, lineNo, ival, ivals, sz;
+    auto name, lineNo, ival, ivals, sz, n;
 
     if (yTok[0] != T_NAME)
         ice("Definitions start with a T_NAME");
@@ -106,10 +114,13 @@ yDef() {
             vcPush(&ivals, ival);
         }
     }
-
     yExpect(';');
 
-    return (0);
+    n = stGet(A_XDEF, lineNo);
+    n[2] = name;
+    n[3] = sz;
+    n[4] = ivals;
+    return (n);
 }
 
 yIval() {
