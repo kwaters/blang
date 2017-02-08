@@ -15,6 +15,7 @@ main() {
     extrn ibOpen, ibGet;
     extrn lMain, lPrint;
     extrn tok;
+    extrn yMain;
 
     auto c;
 
@@ -29,9 +30,12 @@ main() {
     while ((c = ibGet()) != '*e')
         putchar(c);
     */
+    /*
     while (!lMain(tok)) {
         lPrint(tok);
         if (tok[0] == '*e')
             return;
     }
+    */
+    yMain();
 }

@@ -119,9 +119,9 @@ struct AstFdef {
 };
 struct AstVar {
     AstKind kind;
+    struct Vector *variables;
     Ast *statement;
     I isAuto;
-    struct Vector *variables;
 };
 struct AstLabel {
     AstKind kind;

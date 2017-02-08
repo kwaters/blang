@@ -39,6 +39,28 @@ A_CALL    28;  /* Function call */
 /* synthetic */
 A_LOAD    29;  /* lvalue to rvalue Load */
 
+/* Unary operator kinds. */
+U_NEG      1;
+U_NOT      2;
+
+/* Binary operator kinds. */
+O_OR      1;
+O_AND     2;
+O_EQ      3;
+O_NEQ     4;
+O_LT      5;
+O_LTE     6;
+O_GT      7;
+O_GTE     8;
+O_SHIFTL  9;
+O_SHIFTR 10;
+O_MINUS  11;
+O_PLUS   12;
+O_REM    13;
+O_MUL    14;
+O_DIV    15;
+
+
 /* Since case labels must be a constant, it can be confusion to switch on the
  * AST node type.  This is a pre-formatted switch statement, which can by
  * copied.  Because comments cannot be nested this is a real function. */
@@ -76,7 +98,15 @@ stDummy(node) {
     }
 }
 
-stGet(kind) {
+stGet(kind, lineNo) {
+    extrn getvec;
+
+    auto n;
+
+    n = getvec(4);
+    n[0] = kind;
+    n[1] = lineNo;
+    return (n);
 }
 
 stRlse(node) {
