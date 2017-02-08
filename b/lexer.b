@@ -457,6 +457,7 @@ lOp(c, tok, assign) {
             lReplace(c);
         } else {
             tok[0] = '!';
+            lReplace(peek);
         }
         goto break;
     }
