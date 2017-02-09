@@ -287,20 +287,283 @@ stShow(node) {
 /* Indentation level for stSNode(). */
 stIndent 0;
 
-/* Work function for stShow(). */
-stSNode(n) {
+/* Should '}' be printed for the stNode(). */
+
+/* Indent the current line |stIndent| spaces. */
+stSNI() {
     extrn printf;
     extrn stIndent;
-    extrn stApply;
     auto i;
-
     i = 0;
     while (i++ < stIndent)
         printf("  ");
+}
 
-    printf("NODE: %d (%d)*n", *n, (*n)[0]);
+/* Print a name. */
+stSName(name) {
+    extrn putchar;
+    auto c;
+    while (name) {
+        putchar(name & 0377);
+        name =>> 8;
+    }
+}
 
+/* Print a string. */
+stSStr(s, len)
+{
+    extrn putchar, printf, char;
+    auto i, c;
+
+    i = 0;
+    while (i < len) {
+        c = char(s, i++);
+        switch (c) {
+        case '*0': printf("**0"); goto loop;
+        case '*e': printf("**e"); goto loop;
+        case '*t': printf("**t"); goto loop;
+        case '*n': printf("**n"); goto loop;
+        case '**': printf("****"); goto loop;
+        case '*"': printf("***""); goto loop;
+        }
+        if (c >= ' ' & c <= '~')
+            putchar(c);
+        else
+            printf("**?");
+loop:;
+    }
+}
+
+/* Print a binary op */
+stSBOp(op)
+{
+    extrn printf, ice;
+
+    /* TODO(kwaters): Is this better done with a table? */
+    switch (op) {
+    case  1: printf("OR");     return;
+    case  2: printf("AND");    return;
+    case  3: printf("EQ");     return;
+    case  4: printf("NEQ");    return;
+    case  5: printf("LT");     return;
+    case  6: printf("LTE");    return;
+    case  7: printf("GT");     return;
+    case  8: printf("GTE");    return;
+    case  9: printf("SHIFTL"); return;
+    case 10: printf("SHIFTR"); return;
+    case 11: printf("MINUS");  return;
+    case 12: printf("PLUS");   return;
+    case 13: printf("REM");    return;
+    case 14: printf("MUL");    return;
+    case 15: printf("DIV");    return;
+    }
+    ice("Unknown binary operation");
+}
+
+/* Print a unary op */
+stSUOp(op)
+{
+    extrn printf, ice;
+
+    /* TODO(kwaters): Is this better done with a table? */
+    switch(op) {
+    case  1: printf("NEG"); return;
+    case  2: printf("NOT"); return;
+    }
+    ice("Unknown unary operation");
+}
+
+/* Work function for stShow(). */
+stSNode(node) {
+    extrn stIndent;
+    extrn printf, putchar, printn, ice;
+    extrn stApply, stSNI, stSName, stSStr, stSBOp, stSUOp;
+    extrn vcSize;
+    extrn exit;
+
+    auto n, i, sz;
+
+    stSNI();
+
+    /* TODO(kwaters): Is this better done with a table? */
+    n = *node;
+    switch (n[0]) {
+    case  1:  /* A_PROG */
+        printf("PROG {*n");
+        goto close;
+
+    case  2:  /* A_XDEF */
+        printf("XDEF ");
+        stSName(n[2]);
+        printf(" %d {*n", n[3]);
+        goto close;
+
+    case  3:  /* A_FDEF */
+        printf("FDEF ");
+        stSName(n[2]);
+        sz = vcSize(n[3]);
+        if (sz == 0) {
+            printf("() {*n");
+            goto close;
+        }
+        i = 0;
+        while (i < sz) {
+            printf(i == 0 ? "(" : ", ");
+            stSName(n[3][i++]);
+        }
+        printf(") {*n");
+        goto close;
+
+    case  4:  /* A_VAR */
+        if (n[4]) {
+            /* is auto */
+            printf("VAR AUTO ");
+            i = 0;
+            sz = vcSize(n[2]);
+            while (i < sz) {
+                printf(i == 0 ? "[" : ", ");
+                stSName(n[2][i]);
+                if (n[2][i + 1] >= 0) {
+                    putchar(" ");
+                    printn(n[2][i + 1], 10);
+                }
+                i =+ 2;
+            }
+        } else {
+            printf("VAR EXTRN ");
+            i = 0;
+            sz = vcSize(n[2]);
+            while (i < sz) {
+                printf(i == 0 ? "[" : ", ");
+                stSName(n[2][i++]);
+            }
+        }
+        printf("] {*n");
+        goto close;
+
+    case  5:  /* A_LABEL */
+        printf("LABEL ");
+        stSName(n[3]);
+        printf(" {*n");
+        goto close;
+
+    case  6:  /* A_CLABEL */
+        printf("CLABEL %d {*n", n[3]);
+        goto close;
+
+    case  7:  /* A_SEQ */
+        printf("SEQ {*n");
+        goto close;
+
+    case  8:  /* A_IFE */
+        printf("IFE {*n");
+        goto close;
+
+    case  9:  /* A_WHILE */
+        printf("WHILE {*n");
+        goto close;
+
+    case 10:  /* A_SWITCH */
+        printf("SWITCH {*n");
+        goto close;
+
+    case 11:  /* A_GOTO */
+        printf("GOTO {*n");
+        goto close;
+
+    case 12:  /* A_VRTRN */
+        printf("VRTRN*n");
+        return;
+
+    case 13:  /* A_RTRN */
+        printf("RTRN {*n");
+        goto close;
+
+    case 14:  /* A_EXPR */
+        printf("EXPR {*n");
+        goto close;
+
+    case 15:  /* A_VOID */
+        printf("VOID*n");
+        return;
+
+    case 16:  /* A_NAME */
+        printf("NAME ");
+        stSName(n[2]);
+        printf("*n");
+        return;
+
+    case 17:  /* A_IND */
+        printf("IND {*n");
+        goto close;
+
+    case 18:  /* A_INDEX */
+        printf("INDEX {*n");
+        goto close;
+
+    case 19:  /* A_NUM */
+        printf("NUM %d*n", n[2]);
+        return;
+
+    case 20:  /* A_STR */
+        printf("STR *"");
+        stSStr(n[2], n[3]);
+        printf("*"*n");
+        return;
+
+    case 21:  /* A_ASSIGN */
+        if (n[4]) {
+            printf("ASSIGN ");
+            stSBOp(n[4]);
+            printf(" {*n");
+        } else {
+            printf("ASSIGN {*n");
+        }
+        goto close;
+
+    case 22:  /* A_PRE */
+        printf("PRE %d {*n", n[3]);
+        goto close;
+
+    case 23:  /* A_POST */
+        printf("POST %d {*n", n[3]);
+        goto close;
+
+    case 24:  /* A_UNARY */
+        printf("UNARY ");
+        stSUOp(n[3]);
+        printf(" {*n");
+        goto close;
+
+    case 25:  /* A_ADDR */
+        printf("ADDR {*n");
+        goto close;
+
+    case 26:  /* A_BIN */
+        printf("BIN ");
+        stSBOp(n[4]);
+        printf(" {*n");
+        goto close;
+
+    case 27:  /* A_COND */
+        printf("COND {*n");
+        goto close;
+
+    case 28:  /* A_CALL */
+        printf("CALL {*n");
+        goto close;
+
+    case 29:  /* A_LOAD */
+        printf("LOAD {*n");
+        goto close;
+    }
+    ice("Unknown AST node kind");
+
+close:
     stIndent++;
-    stApply(*n, stSNode);
+    stApply(n, stSNode);
     stIndent--;
+
+    stSNI();
+    printf("}*n");
 }
