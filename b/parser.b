@@ -305,8 +305,10 @@ yStmt() {
 
     case 277:  /* T_RETURN */
         yShift();
-        if (yTok[0] == ';')
+        if (yTok[0] == ';') {
+            yShift();
             return (stGet(A_VRTRN, yTok[3]));
+        }
 
         n = stGet(A_RTRN, yTok[3]);
         n[2] = yExpr();
