@@ -280,4 +280,27 @@ stApply(n, f) {
 
 /* Debug printout of a syntax tree. */
 stShow(node) {
+    extrn stSNode;
+    stSNode(&node);
+}
+
+/* Indentation level for stSNode(). */
+stIndent 0;
+
+/* Work function for stShow(). */
+stSNode(n) {
+    extrn printf;
+    extrn stIndent;
+    extrn stApply;
+    auto i;
+
+    i = 0;
+    while (i++ < stIndent)
+        printf("  ");
+
+    printf("NODE: %d (%d)*n", *n, (*n)[0]);
+
+    stIndent++;
+    stApply(*n, stSNode);
+    stIndent--;
 }

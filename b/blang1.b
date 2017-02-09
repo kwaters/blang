@@ -7,27 +7,46 @@ ice(s) {
     exit();
 }
 
+/* -dump-tokens -- Output the list of tokens from the lexer. */
+optDTok 0;
+
+/* -dump-ast -- Output the AST after parsing. */
+optDAst 0;
+
+/* input -- Input file. */
+optInp 0;
+
+/* parse arguments */
+mPArgs() {
+    extrn argv;
+    extrn optDTok, optDAst, optInp;
+    extrn strcmp, printf, exit;
+
+    auto argc, arg, i;
+
+    argc = argv[0];
+    i = 1;
+    while (i++ < argc) {
+        arg = argv[i];
+        if (strcmp(arg, "-dump-tokens") == 0) {
+            optDTok = 1;
+        } else if (strcmp(arg, "-dump-ast") == 0)
+            optDAst = 1;
+        else if (!optInp)
+            optInp = arg;
+        else
+            goto error;
+    }
+    if (optInp)
+        return;
+
+error:
+    printf("Usage: blang1 INPUT*n");
+    exit();
+}
+
 /* TODO: local arrays are unsupported. */
 tok[4];
-
-ident 0;
-f(n) {
-    extrn printf;
-    extrn ident;
-    extrn stApply;
-    auto i;
-
-    i = 0;
-    while (i++ < ident)
-        printf("  ");
-
-    printf("NODE: %d (%d)*n", *n, (*n)[0]);
-
-    ident++;
-    stApply(*n, f);
-    ident--;
-
-}
 
 main() {
     extrn printf, putchar, argv, exit;
@@ -35,31 +54,31 @@ main() {
     extrn lMain, lPrint;
     extrn tok;
     extrn yMain;
+    extrn mPArgs, optInp, optDTok, optDAst;
 
-    extrn f, stApply, stRlseR;
+    extrn f, stShow, stRlseR;
 
     auto c;
     auto program;
 
-    if (argv[0] != 2) {
-        printf("Usage: blang1 INPUT*n");
+    mPArgs();
+    ibOpen(optInp);
+
+    if (optDTok) {
+        while (!lMain(tok)) {
+            lPrint(tok);
+            if (tok[0] == '*e')
+                return;
+        }
         exit();
     }
 
-    ibOpen(argv[2]);
-
-    /*
-    while ((c = ibGet()) != '*e')
-        putchar(c);
-    */
-    /*
-    while (!lMain(tok)) {
-        lPrint(tok);
-        if (tok[0] == '*e')
-            return;
-    }
-    */
     program = yMain();
-    stApply(program, f);
+
+    if (optDAst) {
+        stShow(program);
+        exit();
+    }
+
     stRlseR(program);
 }

@@ -7,4 +7,5 @@ blang1 += $(D)blang1.o
 blang1 += $(D)ibuffer.o
 blang1 += $(D)lexer.o
 blang1 += $(D)parser.o
+blang1 += $(D)string.o
 blang1 += $(D)vector.o
