@@ -154,6 +154,7 @@ char unescape(char c)
         case 'e': return '\x04';
         case '(': return '{';
         case ')': return '}';
+        case 't': return '\t';
         case 'n': return '\n';
     }
     return c;
