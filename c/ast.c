@@ -248,9 +248,12 @@ static void ast_show_pre(Ast **node, void *v) {
             for (i = 0; i < end; i += 2) {
                 if (i != 0)
                     printf(", ");
-                printf("%s %ld",
-                       ast_show_name(V_IDX(n->fdef.arguments, i)),
-                       V_IDX(n->fdef.arguments, i + 1));
+                if (V_IDX(n->var.variables, i + 1) > 0)
+                    printf("%s %ld",
+                           ast_show_name(V_IDX(n->var.variables, i)),
+                           V_IDX(n->var.variables, i + 1));
+                else
+                    printf("%s", ast_show_name(V_IDX(n->var.variables, i)));
             }
         } else {
             printf("VAR EXTRN [");
@@ -258,7 +261,7 @@ static void ast_show_pre(Ast **node, void *v) {
             for (i = 0; i < end; i++) {
                 if (i != 0)
                     printf(", ");
-                printf("%s", ast_show_name(V_IDX(n->fdef.arguments, i)));
+                printf("%s", ast_show_name(V_IDX(n->var.variables, i)));
             }
         }
         printf("] {\n");

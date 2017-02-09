@@ -33,13 +33,25 @@ int main(int argc, char *argv[])
 {
     I i;
     I sz;
+    I dumpAst = 0;
+    char *input = NULL;
 
-    if (argc != 2) {
+    for (i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-dump-ast") == 0) {
+            dumpAst = 1;
+        } else if (!input) {
+            input = argv[i];
+        } else {
+            fprintf(stderr, "usage: bc1 SOURCE\n");
+            return 1;
+        }
+    }
+    if (!input) {
         fprintf(stderr, "usage: bc1 SOURCE\n");
         return 1;
     }
 
-    FILE *f = fopen(argv[1], "r");
+    FILE *f = fopen(input, "r");
     if (!f) {
         fprintf(stderr, "ERROR: cannot read \"%s\"\n", argv[1]);
         return 1;
@@ -48,6 +60,11 @@ int main(int argc, char *argv[])
     yyin = f;
     if (yyparse())
         return 1;
+
+    if (dumpAst) {
+        ast_show(yy_program);
+        return 0;
+    }
 
     lrvalue_pass(&yy_program);
 
