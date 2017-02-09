@@ -176,7 +176,7 @@ static void backend_emit_string(I *inst)
             x = 0;
         }
     }
-    if (x % 8 != 7) {
+    if (i % 8 != 0) {
         printf("%s%ldl", comma, x);
     }
     printf(" };\n");
