@@ -378,7 +378,6 @@ static void ast_show_post(Ast **node, void *v) {
 void ast_show(Ast *root)
 {
     ast_walk(&root, ast_show_pre, ast_show_post, NULL);
-    printf("\n");
 }
 
 char *ast_show_name(I name)

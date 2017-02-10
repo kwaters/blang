@@ -13,13 +13,16 @@ optDTok 0;
 /* -dump-ast -- Output the AST after parsing. */
 optDAst 0;
 
+/* -dump-lr-ast -- Output the AST after left right value assignment. */
+optDLR 0;
+
 /* input -- Input file. */
 optInp 0;
 
 /* parse arguments */
 mPArgs() {
     extrn argv;
-    extrn optDTok, optDAst, optInp;
+    extrn optDTok, optDAst, optDLR, optInp;
     extrn strcmp, printf, exit;
 
     auto argc, arg, i;
@@ -30,8 +33,11 @@ mPArgs() {
         arg = argv[i];
         if (strcmp(arg, "-dump-tokens") == 0) {
             optDTok = 1;
-        } else if (strcmp(arg, "-dump-ast") == 0)
+        } else if (strcmp(arg, "-dump-ast") == 0) {
             optDAst = 1;
+        } else if (strcmp(arg, "-dump-lr-ast") == 0) {
+            optDLR = 1;
+        }
         else if (!optInp)
             optInp = arg;
         else
@@ -54,7 +60,8 @@ main() {
     extrn lMain, lPrint;
     extrn tok;
     extrn yMain;
-    extrn mPArgs, optInp, optDTok, optDAst;
+    extrn mPArgs, optInp, optDTok, optDAst, optDLR;
+    extrn lrPass;
 
     extrn f, stShow, stRlseR;
 
@@ -76,6 +83,12 @@ main() {
     program = yMain();
 
     if (optDAst) {
+        stShow(program);
+        exit();
+    }
+
+    lrPass(program);
+    if (optDLR) {
         stShow(program);
         exit();
     }

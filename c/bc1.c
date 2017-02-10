@@ -34,11 +34,14 @@ int main(int argc, char *argv[])
     I i;
     I sz;
     I dumpAst = 0;
+    I dumpLr = 0;
     char *input = NULL;
 
     for (i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-dump-ast") == 0) {
             dumpAst = 1;
+        } else if (strcmp(argv[i], "-dump-lr-ast") == 0) {
+            dumpLr = 1;
         } else if (!input) {
             input = argv[i];
         } else {
@@ -67,6 +70,11 @@ int main(int argc, char *argv[])
     }
 
     lrvalue_pass(&yy_program);
+
+    if (dumpLr) {
+        ast_show(yy_program);
+        return 0;
+    }
 
     backend_header();
 
