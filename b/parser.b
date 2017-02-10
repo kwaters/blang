@@ -25,7 +25,7 @@ yShift() {
  */
 yExpect(kind) {
     extrn error;
-    extrn yTok, yShift;
+    extrn yTok, yShift, error;
 
     if (yTok[0] == kind) {
         yShift();
