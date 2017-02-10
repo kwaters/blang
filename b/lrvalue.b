@@ -17,8 +17,6 @@ lrPassI(pnode) {
     extrn stGet, stRlse, stApply;
     extrn vcApply;
     extrn lrCheckL, lrForceR;
-    extrn stShow;
-    extrn printf;
 
     auto n, temp;
     n = *pnode;
@@ -37,8 +35,9 @@ lrPassI(pnode) {
         lrForceR(&n[2]);
         *pnode = n[2];
         stRlse(n);
-        n = *pnode;
-        goto break;
+        /* Visit the hoisted node. */
+        lrPassI(pnode);
+        return;
 
     case 18:  /* A_INDEX */
         lrForceR(&n[2]);
@@ -77,8 +76,9 @@ lrPassI(pnode) {
         lrCheckL(&n[2]);
         *pnode = n[2];
         stRlse(n);
-        n = *pnode;
-        goto break;
+        /* Visit the hoisted node. */
+        lrPassI(pnode);
+        return;
 
     case 27:  /* A_COND */
         lrForceR(&n[2]);
