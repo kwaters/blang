@@ -7,13 +7,6 @@ yTok[4];  /* lTokenSz */
 /* Next token. */
 yNext[4];  /* lTokenSz */
 
-yError(s, lineNo) {
-    extrn exit, printf;
-
-    printf("error: %s (%d)*n", s, lineNo);
-    exit();
-}
-
 /* Consume one token. */
 yShift() {
     extrn memcpy;
@@ -32,7 +25,7 @@ yShift() {
  */
 yExpect(kind) {
     extrn error;
-    extrn yTok, yShift, yError;
+    extrn yTok, yShift;
 
     if (yTok[0] == kind) {
         yShift();
@@ -40,12 +33,12 @@ yExpect(kind) {
     }
 
     if (kind == ']')
-        yError("[]", yTok[3]);
+        error("[]", 0, yTok[3]);
     if (kind == ')')
-        yError("()", yTok[3]);
+        error("()", 0, yTok[3]);
     if (kind == '}')
-        yError("$)", yTok[3]);
-    yError("xx", yTok[3]);
+        error("$)", 0, yTok[3]);
+    error("sx", 0, yTok[3]);
 }
 
 yMain() {
@@ -76,7 +69,7 @@ yDef() {
     extrn T_NUMBER, T_NAME;
     extrn A_XDEF;
     extrn ice;
-    extrn yTok, yShift, yExpect, yFdef, yIval, yError, yNConst;
+    extrn yTok, yShift, yExpect, yFdef, yIval, error, yNConst;
     extrn stGet;
     extrn vcGet, vcPush;
 
@@ -110,7 +103,7 @@ yDef() {
         while (yTok[0] == ',') {
             yShift();
             if (!(ival = yIval()))
-                yError("xx", yTok[3]);  /* Expected ival. */
+                error("xx", 0, yTok[3]);  /* Expected ival. */
             vcPush(&ivals, ival);
         }
     }
@@ -219,7 +212,7 @@ yStmt() {
     extrn T_ELSE, T_NAME, T_NUMBER;
     extrn stGet;
     extrn vcGet, vcPush;
-    extrn yExpr, yCBody, yShift, yExpect, yError, yNList, yAList, yNConst;
+    extrn yExpr, yCBody, yShift, yExpect, error, yNList, yAList, yNConst;
     extrn ice;
 
     auto n;
@@ -239,7 +232,7 @@ yStmt() {
         yShift();
         /* Ensure at least one name. */
         if (yTok[0] != T_NAME)
-            yError("sx", yTok[3]);  /* Expected NAME. */
+            error("sx", 0, yTok[3]);  /* Expected NAME. */
         n[2] = yNList();
         yExpect(';');
         n[3] = yStmt();
@@ -263,7 +256,7 @@ yStmt() {
         yShift();
         /* TODO: string constants. */
         if (!yNConst(&n[3]))
-            yError("xx", yTok[3]);
+            error("xx", 0, yTok[3]);
         yExpect(':');
         n[2] = yStmt();
         return (n);
@@ -350,7 +343,7 @@ yCBody(kind) {
 yNList() {
     extrn T_NAME;
     extrn yTok;
-    extrn yError, yShift;
+    extrn error, yShift;
     extrn vcGet, vcPush;
 
     auto args;
@@ -363,7 +356,7 @@ yNList() {
     while (yTok[0] == ',') {
         yShift();
         if (yTok[0] != T_NAME)
-            yError("xx", yTok[3]);  /* Expected name. */
+            error("xx", 0, yTok[3]);  /* Expected name. */
 list:
         vcPush(&args, yTok[1]);
         yShift();
@@ -545,7 +538,7 @@ yTerm() {
     extrn U_NEG, U_NOT;
     extrn T_INC;
     extrn yTok;
-    extrn yShift, yExpr, yExpect, yError, yEList;
+    extrn yShift, yExpr, yExpect, error, yEList;
     extrn stGet;
 
     auto n, sufn;
@@ -608,7 +601,7 @@ yTerm() {
         goto suffix;
     }
 
-    yError("ex", yTok[3]);  /* Expected expression. */
+    error("ex", 0, yTok[3]);  /* Expected expression. */
     return (0);
 
 suffix:

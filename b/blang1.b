@@ -1,10 +1,28 @@
 /* vim: set ft=blang : */
 
 ice(s) {
-    extrn printf, exit;
+    extrn printf, abort;
 
     printf("ICE: %s*n", s);
-    exit();
+    abort();
+}
+
+error(code, name, lineNo) {
+    extrn putchar, printf, abort;
+    printf("%s (%d)", code, lineNo);
+    if (name) {
+        putchar(" ");
+        while (name) {
+            putchar(name & 0377);
+            name =>> 8;
+        }
+    }
+    putchar('*n');
+    abort();
+}
+
+abort() {
+    *0 = 0;
 }
 
 /* -dump-tokens -- Output the list of tokens from the lexer. */

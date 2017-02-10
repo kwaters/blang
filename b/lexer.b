@@ -76,11 +76,6 @@ lReplace(char) {
     ibUnget(char);
 }
 
-lError(char) {
-    extrn exit;
-    exit();
-}
-
 /* Eat whitespace and comments. */
 lEatWhte(tok) {
     extrn lGetC, lReplace, lComment, lLineNo;
@@ -116,7 +111,7 @@ loop:
 
 /* Consume a comment after "/" "*". */
 lComment() {
-    extrn lGetC, lError, lLineNo;
+    extrn lGetC, error, lLineNo;
     auto c;
 
 state1:
@@ -124,7 +119,7 @@ state1:
     case '**':
         goto state2;
     case '*e':
-        goto error;
+        goto err;
     case '*n':
         lLineNo++;
         /* fallthrough */
@@ -138,21 +133,22 @@ state2:
     case '**':
         goto state2;
     case '*e':
-        goto error;
+        goto err;
     case '*n':
         lLineNo++;
         /* fallthrough */
     }
     goto state1;
 
-error:
-    lError("Unterminated comment");
+err:
+    error("**/", 0, lLineNo);
 }
 
 /* Get the next token. */
 lMain(tok) {
-    extrn lEatWhte, lChar, lError, lGetC, lIsAlpha, lIsDigit, lName, lNumber,
+    extrn lEatWhte, lChar, error, lGetC, lIsAlpha, lIsDigit, lName, lNumber,
           lOp, lString, lLineNo;
+    extrn ice;
     auto c;
 
     tok[1] = tok[2] = 0;
@@ -194,13 +190,13 @@ lMain(tok) {
         return (lString(tok));
 
     case '/':
-        lError("ICE. *"/*" should be consumed by lEatWhte()");
+        ice("*"/*" should be consumed by lEatWhte()");
     }
 
     if (!lOp(c, tok, 0))
         return (0);
 
-    lError("Unexpected character");
+    error("uc", 0, lLineNo);
     return (1);
 }
 
@@ -285,9 +281,9 @@ lEscape(c) {
 
 /* Parse a character constant. */
 lChar(tok) {
-    extrn T_CHAR;
+    extrn T_CHAR, lLineNo;
     extrn lchar;
-    extrn lGetC, lEscape, lError;
+    extrn lGetC, lEscape, error;
     auto c, i;
 
     i = 0;
@@ -301,11 +297,9 @@ lChar(tok) {
             goto exit;
 
         case '*e':
-            lError("Unterminated character constant");
-
         case '*n':
-            /* TODO: Is this right? */
-            lError("Newline not allowed in character constant");
+            /* TODO: Is *n valid in character constants? */
+            error("''", 0, lLineNo);
         }
 break:
         if (i < 8)
@@ -323,9 +317,9 @@ exit:
  * tok[2] is the length of the string.
  */
 lString(tok) {
-    extrn T_STRING;
+    extrn T_STRING, lLineNo;
     extrn getvec, rlsevec, memcpy, lchar;
-    extrn lGetC, lEscape, lError;
+    extrn lGetC, lEscape, error;
     extrn printf;
     auto i, c, s, newS, limit;
 
@@ -343,10 +337,8 @@ lString(tok) {
             goto exit;
 
         case '*e':
-            lError("Unterminated string constant");
-
         case '*n':
-            lError("Newline not allowed in character constant");
+            error("*"*"", 0, lLineNo);
         }
 break:
         /* Reserve space for the terminating '*e' */

@@ -131,17 +131,10 @@ load:
     (*pnode)[2] = n;
 }
 
-lrErr(s, lineNo) {
-    extrn exit, printf;
-
-    printf("error: %s (%d)*n", s, lineNo);
-    exit();
-}
-
 /* lrCheckL(&node) */
 lrCheckL(pnode) {
     extrn ice;
-    extrn lrErr;
+    extrn error;
     auto n;
 
     n = *pnode;
@@ -162,7 +155,7 @@ lrCheckL(pnode) {
     case 27:  /* A_COND */
     case 28:  /* A_CALL */
     case 29:  /* A_LOAD */
-        lrErr("lv", n[1]);
+        error("lv", 0, n[1]);
     }
 
     ice("Unexpected node in lrForceR");
