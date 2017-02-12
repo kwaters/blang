@@ -8,3 +8,4 @@ bbSucc();
 /* Basic block predecessors */
 bbPred();
 
+bbSplit();

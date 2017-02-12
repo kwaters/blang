@@ -23,6 +23,7 @@ NT_EXT  3;
 NT_K_M  3;  /* Kind mask */
 
 NT_DEF  4;  /* Defined bit */
+NT_NO_S 8;  /* Never stored to bit */
 
 /* Empty the nametable.
  *
