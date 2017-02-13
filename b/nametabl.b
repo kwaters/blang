@@ -83,13 +83,17 @@ ntFetchI(name) {
  */
 ntAdd(name, lineNo, kind) {
     extrn ntFetchI;
-    extrn ntTESz, ntTable, NT_DEF;
+    extrn ntTESz, ntTable, NT_DEF, NT_INT, NT_K_M;
     extrn error;
     extrn vcSize, vcSSize;
     auto p, sz;
 
-    if (ntFetchI(name))
-        error("rd", name, lineNo);
+    if (p = ntFetchI(name)) {
+        if ((p[1] & NT_DEF) | (p[1] & NT_K_M) != NT_INT)
+            error("rd", name, lineNo);
+        p[1] =| NT_DEF;
+        return (p);
+    }
 
     sz = vcSize(ntTable);
     vcSSize(&ntTable, sz + ntTESz);

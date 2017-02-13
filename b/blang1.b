@@ -81,10 +81,14 @@ main() {
     extrn mPArgs, optInp, optDTok, optDAst, optDLR;
     extrn lrPass;
 
-    extrn f, stShow, stRlseR;
+    extrn stShow, stRlseR;
 
     auto c;
     auto program;
+
+    extrn A_FDEF;
+    extrn vcSize, igFunc;
+    auto i, sz;
 
     mPArgs();
     ibOpen(optInp);
@@ -110,6 +114,15 @@ main() {
         stShow(program);
         exit();
     }
+
+    i = 0;
+    sz = vcSize(program[2]);
+    while (i < sz) {
+        if (program[2][i][0] == A_FDEF)
+            igFunc(program[2][i]);
+        i++;
+    }
+
 
     stRlseR(program);
 }
