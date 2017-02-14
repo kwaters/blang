@@ -223,3 +223,121 @@ irAUse(def, use) {
     vcPush(&def[5], use);
     return (def);
 }
+
+irShow(inst) {
+    extrn ice, printf;
+    extrn stSName, stSBOp, stSUOp;
+    extrn vcSize;
+    auto i, sz, vec;
+
+    switch (inst[0]) {
+    case  1:  /* I_UNDEF */
+        printf("t%d = UNDEF;*n", inst[1]);
+        return;
+
+    case  2:  /* I_PHI */
+        printf("t%d = PHI(", inst[1]);
+        i = 0;
+        vec = inst[6];
+        sz = vcSize(vec);
+        while (i < sz) {
+            if (i != 0)
+                printf(", ");
+            printf("t%d [BB%d]", vec[i][1], vec[i + 1][0]);
+            i =+ 2;
+        }
+        printf(");*n");
+        return;
+
+    case  3:  /* I_NUM */
+        printf("t%d = %d;*n", inst[1], inst[6]);
+        return;
+
+    case  4:  /* I_STR */
+        /* TODO */
+        printf("t%d = *"*";*n", inst[1]);
+        return;
+
+    case  5:  /* I_ARG */
+        printf("t%d = ARG(%d);*n", inst[1], inst[6]);
+        return;
+
+    case  6:  /* I_AUTO */
+        printf("t%d = &", inst[1]);
+        stSName(inst[6]);
+        printf(";*n");
+        return;
+
+    case  7:  /* I_EXTRN */
+        printf("t%d = &", inst[1]);
+        stSName(inst[6]);
+        printf("; /** extrn **/*n");
+        return;
+
+    case  8:  /* I_BLOCK */
+        printf("t%d = &&BB%d;", inst[1], inst[6]);
+        return;
+
+    case  9:  /* I_BIN */
+        printf("t%d = t%d ", inst[1], inst[7][1]);
+        stSBOp(inst[6]);
+        printf(" t%d;*n", inst[8][1]);
+        return;
+
+    case 10:  /* I_UNARY */
+        printf("t%d = ", inst[1]);
+        stSUOp(inst[6]);
+        printf(" t%d;*n", inst[7][1]);
+        return;
+
+    case 11:  /* I_CALL */
+        printf("t%d = t%d(", inst[1], inst[6][1]);
+        vec = inst[7];
+        i = 0;
+        sz = vcSize(vec);
+        while (i < sz) {
+            if (i != 0)
+                printf(", ");
+            printf("t%d", vec[i++][1]);
+        }
+        printf(");*n");
+        return;
+
+    case 12:  /* I_LOAD */
+        printf("t%d = LOAD t%d;*n", inst[1], inst[6][1]);
+        return;
+
+    case 13:  /* I_STORE */
+        printf("STORE t%d, t%d;*n", inst[6][1], inst[7][1]);
+        return;
+
+    case 14:  /* I_J */
+        printf("J BB%d;*n", inst[6][0]);
+        return;
+
+    case 15:  /* I_CJ */
+        printf("CJ t%d;*n", inst[6][1]);
+        return;
+
+    case 16:  /* I_RET */
+        printf("RET t%d;*n", inst[6][1]);
+        return;
+
+    case 17:  /* I_IF */
+        printf("IF t%d BB%d, BB%d;*n", inst[6][1], inst[7][0], inst[8][0]);
+        return;
+
+    case 18:  /* I_SWTCH */
+        printf("SWTCH t%d default: BB%d", inst[6][1], inst[7][0]);
+        vec = inst[8];
+        i = 0;
+        sz = vcSize(vec);
+        while (i < sz) {
+            printf(", %d: BB%d", vec[i], vec[i + 1][0]);
+            i =+ 2;
+        }
+        printf(";*n");
+        return;
+    }
+    ice("Unhandled instruction.");
+}

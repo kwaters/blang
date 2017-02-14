@@ -8,12 +8,19 @@ igFunc(func) {
     extrn igNode;
     extrn ntReset;
     extrn stShow;
+    extrn irShow;
 
-    extrn vcSize, bbList, printf, bbFirst;
+    extrn I_RET, I_UNDEF;
+    extrn vcSize, bbList, printf, bbFirst, bbReset, bbEmpty;
+    extrn irI;
+    extrn irTCnt;
     auto i, sz, p;
 
-    bbCur = bbGet();
     ntReset();
+    bbReset();
+    irTCnt = 0;
+
+    bbCur = bbGet();
 
     if (func[0] != A_FDEF)
         ice("Expected function definition.");
@@ -21,7 +28,7 @@ igFunc(func) {
     stShow(func);
 
     igNode(&func[4]);
-    /* TODO: insert RETURN here */
+    irI(I_RET, irI(I_UNDEF));
 
     sz = vcSize(bbList);
     i = 0;
@@ -29,7 +36,8 @@ igFunc(func) {
         printf("BB%d:*n", bbList[i][0]);
         p = bbList[i++][bbFirst];
         while (p) {
-            printf("  %d*n", p[0]);
+            printf("  ");
+            irShow(p);
             p = p[3];
         }
     }
@@ -48,12 +56,12 @@ igNode(pnode) {
     extrn vcGet, vcGetR, vcPush, vcSize, vcSSize;
     extrn stApply;
     extrn ntAdd, ntFetch;
-    extrn bbSplit, bbGet, bbCur;
+    extrn bbSplit, bbGet, bbCur, bbTermQ, bbEmpty;
     extrn ice;
 
     auto n, nte, block, v, yes, no, exit, body, head, caseT, kind, addr;
+    auto yesB, noB;
     auto yesV, noV, sz, args, i;
-
 
     n = *pnode;
 
@@ -84,21 +92,39 @@ igNode(pnode) {
 
     case  8:  /* A_IFE */
         v = igNode(&n[2]);
+        block = bbCur;
 
-        yes = bbGet();
-        no = bbGet();
-        exit = bbGet();
+        noB = yesB = 0;
 
-        irI(I_IF, v, yes, no);
-
-        bbCur = yes;
+        bbCur = yes = bbGet();
         igNode(&n[3]);
-        irI(I_J, exit);
 
-        bbCur = no;
+        if (!bbEmpty(bbCur)) {
+            yesB = bbCur;
+            bbCur = bbGet();
+        }
+
+        no = bbCur;
         igNode(&n[4]);
-        irI(I_J, exit);
 
+        if (!bbEmpty(bbCur)) {
+            noB = bbCur;
+            exit = bbGet();
+        } else {
+            exit = bbCur;
+        }
+
+
+        bbCur = block;
+        irI(I_IF, v, yes, no);
+        if (yesB) {
+            bbCur = yesB;
+            irI(I_J, exit);
+        }
+        if (noB) {
+            bbCur = noB;
+            irI(I_J, exit);
+        }
         bbCur = exit;
         return (0);
 
@@ -125,24 +151,33 @@ igNode(pnode) {
         igCaseT = vcGet();
         bbCur = body = bbGet();
         igNode(&n[3]);
-        igCaseT = caseT;
 
-        exit = bbGet();
+        if (!bbEmpty(bbCur))
+            exit = bbGet();
+        else
+            exit = bbCur;
+
         bbCur = block;
         irI(I_SWTCH, v, exit, igCaseT);
+
+        igCaseT = caseT;
+        bbCur = exit;
         return (0);
 
     case 11:  /* A_GOTO */
         /* TODO succ/pred */
         irI(I_CJ, igNode(&n[2]));
+        bbCur = bbGet();
         return (0);
 
     case 12:  /* A_VRTRN */
         irI(I_RET, irI(I_UNDEF));
+        bbCur = bbGet();
         return (0);
 
     case 13:  /* A_RTRN */
         irI(I_RET, igNode(&n[2]));
+        bbCur = bbGet();
         return (0);
 
     case 14:  /* A_EXPR */
@@ -201,10 +236,10 @@ igNode(pnode) {
     case 27:  /* A_COND */
         v = igNode(&n[2]);
 
-        irI(I_IF, v, yes, no);
         yes = bbGet();
         no = bbGet();
         exit = bbGet();
+        irI(I_IF, v, yes, no);
 
         bbCur = yes;
         yesV = igNode(&n[3]);
