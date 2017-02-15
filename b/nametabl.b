@@ -4,15 +4,17 @@
  *
  * Nametable Entry layout
  * [0] Name
- * [1] flags
- * [2] ARG: #
+ * [1] lineNo of first use
+ * [2] flags
+ * [3] ARG: #
  *     INTERNAL: block
- */ 
+ * [4] "instruction" in the entry block
+ */
 
 /* The nametable */
 ntTable 0;
 
-ntTESz 3;  /* Table entry size. */
+ntTESz 5;  /* Table entry size. */
 
 /* Flags */
 /* Variable kinds */
@@ -42,11 +44,12 @@ ntReset() {
  *
  * Never returns 0.
  */
-ntFetch(name) {
+ntFetch(name, lineNo) {
     extrn ntTESz, ntTable, NT_INT;
     extrn vcSize, vcSSize;
     extrn ntFetchI;
     auto p, sz;
+    extrn printf, stSName;
 
     if (p = ntFetchI(name))
         return (p);
@@ -56,8 +59,10 @@ ntFetch(name) {
     vcSSize(&ntTable, sz + ntTESz);
     p = ntTable + sz;
     p[0] = name;
-    p[1] = NT_INT;
-    p[2] = 0;
+    p[1] = lineNo;
+    p[2] = NT_INT;
+    p[3] = 0;
+    p[4] = 0;
     return (p);
 }
 
@@ -70,11 +75,43 @@ ntFetchI(name) {
     p = ntTable;
     end = p + vcSize(ntTable);
     while (p < end) {
-        if (*p = name)
+        if (*p == name)
             return (p);
         p =+ ntTESz;
     }
     return (0);
+}
+
+ntCheck() {
+    extrn printf;
+    extrn stSName, ntTESz, ntTable;
+    extrn vcSize;
+    auto i, sz;
+
+    i = 0;
+    sz = vcSize(ntTable);
+    while (i < sz) {
+        stSName(i[0]);
+        printf("*n");
+        i =+ ntTESz;
+    }
+}
+
+/* Check that all variables are defined. */
+ntCDef() {
+    extrn ntTable, ntTESz, NT_DEF;
+    extrn vcSize;
+    extrn error;
+    auto i, sz, nte;
+
+    i = 0;
+    sz = vcSize(ntTable);
+    while (i < sz) {
+        nte = ntTable + i;
+        if (!(nte[2] & NT_DEF))
+            error("un", nte[0], nte[1]);
+        i =+ ntTESz;
+    }
 }
 
 /* Add a new name.
@@ -87,11 +124,12 @@ ntAdd(name, lineNo, kind) {
     extrn error;
     extrn vcSize, vcSSize;
     auto p, sz;
+    extrn printf, stSName;
 
     if (p = ntFetchI(name)) {
-        if ((p[1] & NT_DEF) | (p[1] & NT_K_M) != NT_INT)
+        if ((p[2] & NT_DEF) | (p[2] & NT_K_M) != NT_INT)
             error("rd", name, lineNo);
-        p[1] =| NT_DEF;
+        p[2] =| NT_DEF;
         return (p);
     }
 
@@ -99,7 +137,9 @@ ntAdd(name, lineNo, kind) {
     vcSSize(&ntTable, sz + ntTESz);
     p = ntTable + sz;
     p[0] = name;
-    p[1] = kind | NT_DEF;
-    p[2] = 0;
+    p[1] = lineNo;
+    p[2] = kind | NT_DEF;
+    p[3] = 0;
+    p[4] = 0;
     return (p);
 }

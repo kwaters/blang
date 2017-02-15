@@ -9,26 +9,49 @@ igFunc(func) {
     extrn ntReset;
     extrn stShow;
     extrn irShow;
+    extrn ntCDef;
+    extrn NT_EXT, NT_ARG;
 
     extrn I_RET, I_UNDEF;
     extrn vcSize, bbList, printf, bbFirst, bbReset, bbEmpty;
+    extrn ntAdd;
     extrn irI;
     extrn irTCnt;
-    auto i, sz, p;
+    extrn stSName;
+    auto i, sz, p, v, nte;
 
     ntReset();
     bbReset();
     irTCnt = 0;
+
+    /* In 9.1 "Users' Reference to B," printn() makes a recursive call
+     * without being explicitly imported as an extrn, so it must be
+     * implicitly in the nametable.
+     */
+    ntAdd(func[2], func[1], NT_EXT);
+
+    v = func[3];
+    i = 0;
+    sz = vcSize(v);
+    while (i < sz) {
+        nte = ntAdd(v[i], func[1], NT_ARG);
+        nte[3] = i;
+        i++;
+    }
 
     bbCur = bbGet();
 
     if (func[0] != A_FDEF)
         ice("Expected function definition.");
 
-    stShow(func);
-
     igNode(&func[4]);
     irI(I_RET, irI(I_UNDEF));
+
+    ntCDef();
+
+    /* Print function */
+    stSName(func[2]);
+    printf(":*n");
 
     sz = vcSize(bbList);
     i = 0;
@@ -58,6 +81,7 @@ igNode(pnode) {
     extrn ntAdd, ntFetch;
     extrn bbSplit, bbGet, bbCur, bbTermQ, bbEmpty;
     extrn ice;
+    extrn stSName, printf;
 
     auto n, nte, block, v, yes, no, exit, body, head, caseT, kind, addr;
     auto yesB, noB;
@@ -67,13 +91,30 @@ igNode(pnode) {
 
     switch (n[0]) {
     case  4:  /* A_VAR */
-        /* TODO: Register variables */
+        v = n[2];
+        sz = vcSize(v);
+        i = 0;
+        if (n[4]) {
+            /* auto */
+            while (i < sz) {
+                ntAdd(v[i], n[1], NT_AUTO);
+                if (v[i + 1] != -1) {
+                    /* TODO */
+                    ice("Unimplemented local array");
+                }
+                i =+ 2;
+            }
+        } else {
+            /* extrn */
+            while (i < sz)
+                ntAdd(v[i++], n[1], NT_EXT);
+        }
         igNode(&n[3]);
         return (0);
 
     case  5:  /* A_LABEL */
         nte = ntAdd(n[3], n[1], NT_INT);
-        nte[2] = bbSplit();
+        nte[3] = bbSplit();
         igNode(&n[2]);
         return (0);
 
@@ -129,16 +170,16 @@ igNode(pnode) {
         return (0);
 
     case  9:  /* A_WHILE */
-        body = bbGet();
-        exit = bbGet();
-
         head = bbSplit();
         v = igNode(&n[2]);
-        irI(I_IF, v, body, exit);
 
-        bbCur = body;
+        bbCur = body = bbGet();
         igNode(&n[3]);
         irI(I_J, head);
+
+        exit = bbGet();
+        bbCur = head;
+        irI(I_IF, v, body, exit);
 
         bbCur = exit;
         return (0);
@@ -152,10 +193,7 @@ igNode(pnode) {
         bbCur = body = bbGet();
         igNode(&n[3]);
 
-        if (!bbEmpty(bbCur))
-            exit = bbGet();
-        else
-            exit = bbCur;
+        exit = bbSplit();
 
         bbCur = block;
         irI(I_SWTCH, v, exit, igCaseT);
@@ -188,10 +226,10 @@ igNode(pnode) {
         return (0);
 
     case 16:  /* A_NAME */
-        nte = ntFetch(n[2]);
-        kind = nte[1] & NT_K_M;
+        nte = ntFetch(n[2], n[1]);
+        kind = nte[2] & NT_K_M;
         if (kind == NT_ARG)
-            return (irI(I_ARG, nte[2]));
+            return (irI(I_ARG, nte[3]));
         if (kind == NT_AUTO)
             return (irI(I_AUTO, nte[0]));
         /* TODO: block must be loaded into NT_INT */
