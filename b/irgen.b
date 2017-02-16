@@ -17,7 +17,7 @@ igFunc(func) {
     extrn ntAdd;
     extrn irI;
     extrn irTCnt;
-    extrn stSName;
+    extrn obFmt;
     auto i, sz, p, v, nte;
 
     ntReset();
@@ -50,8 +50,7 @@ igFunc(func) {
     ntCDef();
 
     /* Print function */
-    stSName(func[2]);
-    printf(":*n");
+    obFmt("[2:name]:*n", func);
 
     sz = vcSize(bbList);
     i = 0;
@@ -81,7 +80,7 @@ igNode(pnode) {
     extrn ntAdd, ntFetch;
     extrn bbSplit, bbGet, bbCur, bbTermQ, bbEmpty;
     extrn ice;
-    extrn stSName, printf;
+    extrn printf;
 
     auto n, nte, block, v, yes, no, exit, body, head, caseT, kind, addr;
     auto yesB, noB;

@@ -49,7 +49,7 @@ ntFetch(name, lineNo) {
     extrn vcSize, vcSSize;
     extrn ntFetchI;
     auto p, sz;
-    extrn printf, stSName;
+    extrn printf;
 
     if (p = ntFetchI(name))
         return (p);
@@ -82,21 +82,6 @@ ntFetchI(name) {
     return (0);
 }
 
-ntCheck() {
-    extrn printf;
-    extrn stSName, ntTESz, ntTable;
-    extrn vcSize;
-    auto i, sz;
-
-    i = 0;
-    sz = vcSize(ntTable);
-    while (i < sz) {
-        stSName(i[0]);
-        printf("*n");
-        i =+ ntTESz;
-    }
-}
-
 /* Check that all variables are defined. */
 ntCDef() {
     extrn ntTable, ntTESz, NT_DEF;
@@ -124,7 +109,7 @@ ntAdd(name, lineNo, kind) {
     extrn error;
     extrn vcSize, vcSSize;
     auto p, sz;
-    extrn printf, stSName;
+    extrn printf;
 
     if (p = ntFetchI(name)) {
         if ((p[2] & NT_DEF) | (p[2] & NT_K_M) != NT_INT)

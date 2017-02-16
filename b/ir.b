@@ -226,7 +226,7 @@ irAUse(def, use) {
 
 irShow(inst) {
     extrn ice, printf;
-    extrn stSName, stSBOp, stSUOp;
+    extrn obFmt;
     extrn vcSize;
     auto i, sz, vec;
 
@@ -236,17 +236,7 @@ irShow(inst) {
         return;
 
     case  2:  /* I_PHI */
-        printf("t%d = PHI(", inst[1]);
-        i = 0;
-        vec = inst[6];
-        sz = vcSize(vec);
-        while (i < sz) {
-            if (i != 0)
-                printf(", ");
-            printf("t%d [BB%d]", vec[i][1], vec[i + 1][0]);
-            i =+ 2;
-        }
-        printf(");*n");
+        obFmt("t[1] = PHI([6:list:t[0.1] [:lb]BB[1.0][:rb]]);*n", inst);
         return;
 
     case  3:  /* I_NUM */
@@ -254,8 +244,7 @@ irShow(inst) {
         return;
 
     case  4:  /* I_STR */
-        /* TODO */
-        printf("t%d = *"*";*n", inst[1]);
+        obFmt("t[1] = *"[6:str:7]*";*n", inst);
         return;
 
     case  5:  /* I_ARG */
@@ -263,15 +252,11 @@ irShow(inst) {
         return;
 
     case  6:  /* I_AUTO */
-        printf("t%d = &", inst[1]);
-        stSName(inst[6]);
-        printf(";*n");
+        obFmt("t[1] = &[6:name];*n", inst);
         return;
 
     case  7:  /* I_EXTRN */
-        printf("t%d = &", inst[1]);
-        stSName(inst[6]);
-        printf("; /** extrn **/*n");
+        obFmt("t[1] = &[6:name]; /** extrn **/*n", inst);
         return;
 
     case  8:  /* I_BLOCK */
@@ -279,28 +264,15 @@ irShow(inst) {
         return;
 
     case  9:  /* I_BIN */
-        printf("t%d = t%d ", inst[1], inst[7][1]);
-        stSBOp(inst[6]);
-        printf(" t%d;*n", inst[8][1]);
+        obFmt("t[1] = t[7.1] [6:bop] t[8.1];*n", inst);
         return;
 
     case 10:  /* I_UNARY */
-        printf("t%d = ", inst[1]);
-        stSUOp(inst[6]);
-        printf(" t%d;*n", inst[7][1]);
+        obFmt("t[1] = [6:uop] t[7.1];*n", inst);
         return;
 
     case 11:  /* I_CALL */
-        printf("t%d = t%d(", inst[1], inst[6][1]);
-        vec = inst[7];
-        i = 0;
-        sz = vcSize(vec);
-        while (i < sz) {
-            if (i != 0)
-                printf(", ");
-            printf("t%d", vec[i++][1]);
-        }
-        printf(");*n");
+        obFmt("t[1] = t[6.1]([7:list:t[0.1]]);*n", inst);
         return;
 
     case 12:  /* I_LOAD */
@@ -328,15 +300,8 @@ irShow(inst) {
         return;
 
     case 18:  /* I_SWTCH */
-        printf("SWTCH t%d default: BB%d", inst[6][1], inst[7][0]);
-        vec = inst[8];
-        i = 0;
-        sz = vcSize(vec);
-        while (i < sz) {
-            printf(", %d: BB%d", vec[i], vec[i + 1][0]);
-            i =+ 2;
-        }
-        printf(";*n");
+        obFmt("SWTCH t[6.1] default: BB[7.0], [8:list:[0]: BB[1.0]];*n",
+              inst);
         return;
     }
     ice("Unhandled instruction.");
