@@ -309,34 +309,8 @@ stSName(name) {
     }
 }
 
-/* Print a string. */
-stSStr(s, len)
-{
-    extrn putchar, printf, char;
-    auto i, c;
-
-    i = 0;
-    while (i < len) {
-        c = char(s, i++);
-        switch (c) {
-        case '*0': printf("**0"); goto loop;
-        case '*e': printf("**e"); goto loop;
-        case '*t': printf("**t"); goto loop;
-        case '*n': printf("**n"); goto loop;
-        case '**': printf("****"); goto loop;
-        case '*"': printf("***""); goto loop;
-        }
-        if (c >= ' ' & c <= '~')
-            putchar(c);
-        else
-            printf("**?");
-loop:;
-    }
-}
-
 /* Print a binary op */
-stSBOp(op)
-{
+stSBOp(op) {
     extrn printf, ice;
 
     /* TODO(kwaters): Is this better done with a table? */
@@ -361,8 +335,7 @@ stSBOp(op)
 }
 
 /* Print a unary op */
-stSUOp(op)
-{
+stSUOp(op) {
     extrn printf, ice;
 
     /* TODO(kwaters): Is this better done with a table? */
@@ -377,9 +350,10 @@ stSUOp(op)
 stSNode(node) {
     extrn stIndent;
     extrn printf, putchar, printn, ice;
-    extrn stApply, stSNI, stSName, stSStr, stSBOp, stSUOp;
+    extrn stApply, stSNI;
     extrn vcSize;
     extrn exit;
+    extrn obFmt;
 
     auto n, i, sz;
 
@@ -393,168 +367,119 @@ stSNode(node) {
         goto close;
 
     case  2:  /* A_XDEF */
-        printf("XDEF ");
-        stSName(n[2]);
-        printf(" %d {*n", n[3]);
+        obFmt("XDEF [2:name] [3] {*n", n);
         goto close;
 
     case  3:  /* A_FDEF */
-        printf("FDEF ");
-        stSName(n[2]);
-        sz = vcSize(n[3]);
-        if (sz == 0) {
-            printf("() {*n");
-            goto close;
-        }
-        i = 0;
-        while (i < sz) {
-            printf(i == 0 ? "(" : ", ");
-            stSName(n[3][i++]);
-        }
-        printf(") {*n");
+        obFmt("FDEF [2:name]([3:list:[:name]]) {*n", n);
         goto close;
 
     case  4:  /* A_VAR */
         if (n[4]) {
-            /* is auto */
-            printf("VAR AUTO ");
-            i = 0;
-            sz = vcSize(n[2]);
-            while (i < sz) {
-                printf(i == 0 ? "[" : ", ");
-                stSName(n[2][i]);
-                if (n[2][i + 1] >= 0) {
-                    putchar(" ");
-                    printn(n[2][i + 1], 10);
-                }
-                i =+ 2;
-            }
+            obFmt("VAR AUTO [:lb][2:list:[0:name][1:gz: [1]]][:rb] {*n", n);
         } else {
-            printf("VAR EXTRN ");
-            i = 0;
-            sz = vcSize(n[2]);
-            while (i < sz) {
-                printf(i == 0 ? "[" : ", ");
-                stSName(n[2][i++]);
-            }
+            obFmt("VAR EXTRN [:lb][2:list:[:name]][:rb] {*n", n);
         }
-        printf("] {*n");
         goto close;
 
     case  5:  /* A_LABEL */
-        printf("LABEL ");
-        stSName(n[3]);
-        printf(" {*n");
+        obFmt("LABEL [3:name] {*n", n);
         goto close;
 
     case  6:  /* A_CLABEL */
-        printf("CLABEL %d {*n", n[3]);
+        obFmt("CLABEL [3] {*n", n);
         goto close;
 
     case  7:  /* A_SEQ */
-        printf("SEQ {*n");
+        obFmt("SEQ {*n", n);
         goto close;
 
     case  8:  /* A_IFE */
-        printf("IFE {*n");
+        obFmt("IFE {*n", n);
         goto close;
 
     case  9:  /* A_WHILE */
-        printf("WHILE {*n");
+        obFmt("WHILE {*n", n);
         goto close;
 
     case 10:  /* A_SWITCH */
-        printf("SWITCH {*n");
+        obFmt("SWITCH {*n", n);
         goto close;
 
     case 11:  /* A_GOTO */
-        printf("GOTO {*n");
+        obFmt("GOTO {*n", n);
         goto close;
 
     case 12:  /* A_VRTRN */
-        printf("VRTRN*n");
+        obFmt("VRTRN*n", n);
         return;
 
     case 13:  /* A_RTRN */
-        printf("RTRN {*n");
+        obFmt("RTRN {*n", n);
         goto close;
 
     case 14:  /* A_EXPR */
-        printf("EXPR {*n");
+        obFmt("EXPR {*n", n);
         goto close;
 
     case 15:  /* A_VOID */
-        printf("VOID*n");
+        obFmt("VOID*n", n);
         return;
 
     case 16:  /* A_NAME */
-        printf("NAME ");
-        stSName(n[2]);
-        printf("*n");
+        obFmt("NAME [2:name]*n", n);
         return;
 
     case 17:  /* A_IND */
-        printf("IND {*n");
+        obFmt("IND {*n", n);
         goto close;
 
     case 18:  /* A_INDEX */
-        printf("INDEX {*n");
+        obFmt("INDEX {*n", n);
         goto close;
 
     case 19:  /* A_NUM */
-        printf("NUM %d*n", n[2]);
+        obFmt("NUM [2]*n", n);
         return;
 
     case 20:  /* A_STR */
-        printf("STR *"");
-        stSStr(n[2], n[3]);
-        printf("*"*n");
+        obFmt("STR *"[2:str:3]*"*n", n);
         return;
 
     case 21:  /* A_ASSIGN */
-        if (n[4]) {
-            printf("ASSIGN ");
-            stSBOp(n[4]);
-            printf(" {*n");
-        } else {
-            printf("ASSIGN {*n");
-        }
+        obFmt("ASSIGN [4:gz:[4:bop] ]{*n", n);
         goto close;
 
     case 22:  /* A_PRE */
-        printf("PRE %d {*n", n[3]);
+        obFmt("PRE [3] {*n", n);
         goto close;
 
     case 23:  /* A_POST */
-        printf("POST %d {*n", n[3]);
+        obFmt("POST [3] {*n", n);
         goto close;
 
     case 24:  /* A_UNARY */
-        printf("UNARY ");
-        stSUOp(n[3]);
-        printf(" {*n");
+        obFmt("UNARY [3:uop] {*n", n);
         goto close;
 
     case 25:  /* A_ADDR */
-        printf("ADDR {*n");
+        obFmt("ADDR {*n", n);
         goto close;
 
     case 26:  /* A_BIN */
-        printf("BIN ");
-        stSBOp(n[4]);
-        printf(" {*n");
+        obFmt("BIN [4:bop] {*n", n);
         goto close;
 
     case 27:  /* A_COND */
-        printf("COND {*n");
+        obFmt("COND {*n", n);
         goto close;
 
     case 28:  /* A_CALL */
-        printf("CALL {*n");
+        obFmt("CALL {*n", n);
         goto close;
 
     case 29:  /* A_LOAD */
-        printf("LOAD {*n");
+        obFmt("LOAD {*n", n);
         goto close;
     }
     ice("Unknown AST node kind");
