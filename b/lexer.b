@@ -466,6 +466,7 @@ break:
 
 lPrint(tok) {
     extrn printf, putchar;
+    extrn obFmt;
     extrn lPTKind, lPStr;
     auto x, kind;
 
@@ -478,28 +479,23 @@ lPrint(tok) {
         printf("  ");
         if (tok[1])
             lPTKind(tok[1]);
-        goto break;
+        printf("*n");
+        return;
 
     case 259:  /* CHAR */
     case 267:  /* NUMBER */
-        printf("  %d*n", tok[1]);
+        obFmt("  [1]*n", tok);
         return;
 
     case 265:  /* NAME */
-        printf("  ");
-        x = tok[1];
-        while (x > 0) {
-            putchar(x & 0377);
-            x =>> 8;
-        }
-        goto break;
+        obFmt("  [1:name]*n", tok);
+        return;
 
     case 270:  /* STRING */
-        printf("  ");
-        lPStr(tok[1], tok[2]);
-        goto break;
+        obFmt("  *"[1:str:2]*"*n", tok);
+        return;
     }
-break:
+
     printf("*n");
 }
 
