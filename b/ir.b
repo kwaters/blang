@@ -24,6 +24,7 @@ I_CALL  11;  /* f, arg ... -- function call */
 /* Memory */
 I_LOAD  12;  /* addr */
 I_STORE 13;  /* addr, value */
+I_ALLOC 19;  /* sz, name */
 
 /* Terminators.  All blocks end with exactly one terminator */
 I_J     14;  /* block */
@@ -60,6 +61,7 @@ irDummy(kind) {
     case 16:  /* I_RET */
     case 17:  /* I_IF */
     case 18:  /* I_SWTCH */
+    case 19:  /* I_ALLOC */
         ;
     }
     ice("Unhandled instruction.");
@@ -82,30 +84,40 @@ irDummy(kind) {
 irTCnt 0;
 
 /* Create a new instruction */
-irI(kind, a0, a1, a2) {
-    extrn bbCur, bbLast, bbFirst;
+irI(kind, a0, a1, a2, a3, a4, a5) {
+    extrn bbCur, bbFirst, bbLast, bbEmpty;
+    extrn irIns;
+    auto last, insp;
+    extrn obFmt, irShow;
+
+    return (irIns(bbCur[4], kind, a0, a1, a2, a3, a4, a5));
+}
+
+/* Insert an instruction.
+ *
+ * ip is the instruction you want to insert after.  ip == bb, inserts at
+ * begining of the basic block.
+ */
+irIns(ip, kind, a0, a1, a2) {
     extrn irTCnt;
     extrn getvec, ice;
     extrn vcPush, vcGet, vcSize;
     extrn irSz, irAUse;
-    auto inst, i, sz, olast, vec;
-
+    auto inst, i, sz, onext, oprev, vec, parent;
+    extrn obFmt;
 
     inst = getvec(irSz(kind) - 1);
     inst[0] = kind;
+    inst[2] = ip[2];
     inst[1] = ++irTCnt;
-    inst[2] = bbCur;
     inst[5] = vcGet();
 
-    /* Link node into the end of the current basic block. */
-    olast = bbCur[bbLast];
-    inst[3] = 0;
-    inst[4] = olast;
-    if (olast)
-        olast[3] = inst;
-    else
-        bbCur[bbFirst] = inst;
-    bbCur[bbLast] = inst;
+    /* Insert into linked-list. */
+    onext = ip[3];
+    inst[3] = onext;
+    inst[4] = ip;
+    onext[4] = inst;
+    ip[3] = inst;
 
     switch (kind) {
     case  1:  /* I_UNDEF */
@@ -116,6 +128,7 @@ irI(kind, a0, a1, a2) {
         vec = vcGet();
         i = &a0;
         while (*i) {
+            /* TODO: PHI should add uses */
             vcPush(&vec, *i++);
             vcPush(&vec, *i++);
         }
@@ -132,6 +145,7 @@ irI(kind, a0, a1, a2) {
         goto break;
 
     case  4:  /* I_STR */
+    case 19:  /* I_ALLOC */
         inst[6] = a0;
         inst[7] = a1;
         goto break;
@@ -178,6 +192,10 @@ irI(kind, a0, a1, a2) {
         inst[7] = a1;
         inst[8] = a2;
         goto break;
+
+        inst[6] = a0;
+        inst[7] = a1;
+        goto break;
     }
     ice("Unhandled instruction.");
 break:
@@ -207,6 +225,7 @@ irSz(kind) {
     case 10:  /* I_UNARY */
     case 11:  /* I_CALL */
     case 13:  /* I_STORE */
+    case 19:  /* I_ALLOC */
         return (8);
 
     case  9:  /* I_BIN */
@@ -223,6 +242,97 @@ irAUse(def, use) {
     vcPush(&def[5], use);
     return (def);
 }
+
+irDel(inst) {
+    extrn irRlse;
+    auto next, prev;
+
+    /* Unlink instruction. */
+    next = inst[3];
+    prev = inst[4];
+    prev[3] = next;
+    next[4] = prev;
+
+    irRlse(inst);
+}
+
+irRlse(inst) {
+    extrn rlsevec;
+    extrn vcRlse;
+    extrn irSz;
+    vcRlse(inst[5]);
+    rlsevec(inst, irSz(inst[0]) - 1);
+}
+
+irRepS 0;
+irRepD 0;
+irRep(dst, src)
+{
+    extrn irRepS, irRepI, irRepD, irDel;
+    extrn obFmt, vcApply;
+    obFmt("uses={[5:list:t[0.1]]}*n", dst);
+
+    irRepS = src;
+    irRepD = dst;
+    vcApply(dst[5], irRepI);
+
+    irDel(dst);
+}
+
+irRepI(instp)
+{
+    extrn irRepS, irRepD, irAUse;
+    extrn vcSize;
+    extrn ice;
+
+    auto inst, src, dst;
+    auto i, sz, vec;
+    src = irRepS;
+    dst = irRepD;
+    inst = *instp;
+
+    switch (inst[0]) {
+    case  2:  /* I_PHI */
+        ice("unimplemented");
+
+    case  9:  /* I_BIN */
+        if (inst[8] == dst)
+            inst[8] = irAUse(src);
+        /* falltrhough */
+    case 10:  /* I_UNARY */
+        if (inst[7] == dst)
+            inst[7] = irAUse(src);
+        return;
+
+    case 11:  /* I_CALL */
+        if (inst[6] == dst)
+            inst[6] = irAUse(src);
+        vec = inst[7];
+        i = 0;
+        sz = vcSize(vec);
+        while (i < sz) {
+            if (vec[i] == dst)
+                vec[i] = irAUse(src);
+            i++;
+        }
+        return;
+
+    case 13:  /* I_STORE */
+        if (inst[7] == dst)
+            inst[7] = irAUse(src);
+        /* fallthrough */
+    case 12:  /* I_LOAD */
+    case 15:  /* I_CJ */
+    case 16:  /* I_RET */
+    case 17:  /* I_IF */
+    case 18:  /* I_SWTCH */
+        if (inst[6] == dst)
+            inst[6] = irAUse(src);
+        return;
+    }
+    ice("Unexpected instruction in irRep");
+}
+
 
 irShow(inst) {
     extrn ice, printf;
@@ -260,7 +370,7 @@ irShow(inst) {
         return;
 
     case  8:  /* I_BLOCK */
-        printf("t%d = &&BB%d;", inst[1], inst[6]);
+        obFmt("t[1] = &&BB[6.0];*n", inst);
         return;
 
     case  9:  /* I_BIN */
@@ -302,6 +412,10 @@ irShow(inst) {
     case 18:  /* I_SWTCH */
         obFmt("SWTCH t[6.1] default: BB[7.0], [8:list:[0]: BB[1.0]];*n",
               inst);
+        return;
+
+    case 19:  /* I_ALLOC */
+        obFmt("t[1] = ALLOC([6]);[7:gz:  /** [7:name] **/]*n", inst);
         return;
     }
     ice("Unhandled instruction.");

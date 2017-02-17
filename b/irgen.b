@@ -5,7 +5,7 @@ igFunc(func) {
     extrn bbCur;
     extrn ice;
     extrn bbGet;
-    extrn igNode;
+    extrn igNode, igVar;
     extrn ntReset;
     extrn stShow;
     extrn irShow;
@@ -18,7 +18,7 @@ igFunc(func) {
     extrn irI;
     extrn irTCnt;
     extrn obFmt;
-    auto i, sz, p, v, nte;
+    auto i, sz, p, v, nte, entry, bb;
 
     ntReset();
     bbReset();
@@ -39,7 +39,7 @@ igFunc(func) {
         i++;
     }
 
-    bbCur = bbGet();
+    entry = bbCur = bbGet();
 
     if (func[0] != A_FDEF)
         ice("Expected function definition.");
@@ -48,6 +48,7 @@ igFunc(func) {
     irI(I_RET, irI(I_UNDEF));
 
     ntCDef();
+    igVar(entry);
 
     /* Print function */
     obFmt("[2:name]:*n", func);
@@ -56,8 +57,9 @@ igFunc(func) {
     i = 0;
     while (i < sz) {
         printf("BB%d:*n", bbList[i][0]);
-        p = bbList[i++][bbFirst];
-        while (p) {
+        bb = bbList[i++];
+        p = bb[3];
+        while (p != bb) {
             printf("  ");
             irShow(p);
             p = p[3];
@@ -96,11 +98,8 @@ igNode(pnode) {
         if (n[4]) {
             /* auto */
             while (i < sz) {
-                ntAdd(v[i], n[1], NT_AUTO);
-                if (v[i + 1] != -1) {
-                    /* TODO */
-                    ice("Unimplemented local array");
-                }
+                nte = ntAdd(v[i], n[1], NT_AUTO);
+                nte[3] = v[i + 1];
                 i =+ 2;
             }
         } else {
@@ -153,7 +152,6 @@ igNode(pnode) {
         } else {
             exit = bbCur;
         }
-
 
         bbCur = block;
         irI(I_IF, v, yes, no);
@@ -229,14 +227,11 @@ igNode(pnode) {
         kind = nte[2] & NT_K_M;
         if (kind == NT_ARG)
             return (irI(I_ARG, nte[3]));
-        if (kind == NT_AUTO)
-            return (irI(I_AUTO, nte[0]));
-        /* TODO: block must be loaded into NT_INT */
-        if (kind == NT_INT)
-            return (irI(I_AUTO, nte[0]));
         if (kind == NT_EXT)
             return (irI(I_EXTRN, nte[0]));
-        ice("Bad variable kind");
+        if (nte[4])
+            return (nte[4]);
+        return (nte[4] = irI(I_UNDEF));
 
     case 19:  /* A_NUM */
         return (irI(I_NUM, n[2]));
@@ -287,6 +282,7 @@ igNode(pnode) {
         irI(I_J, exit);
 
         bbCur = exit;
+        /* TODO(kwaters): push in a vector instead of being cute. */
         return (irI(I_PHI, yesV, yes, noV, no, 0));
 
     case 28:  /* A_CALL */
@@ -307,4 +303,44 @@ igNode(pnode) {
 
     }
     ice("Unexpected node");
+}
+
+igVar(entry) {
+    extrn I_ALLOC, I_BLOCK, I_STORE;
+    extrn ntTable, ntTESz, NT_K_M, NT_ARG, NT_EXT, NT_AUTO, NT_INT;
+    extrn irIns, irDel, irRep;
+    extrn vcSize;
+
+    auto i, sz;
+    auto nte, kind;
+    auto var, value;
+
+    i = 0;
+    sz = vcSize(ntTable);
+    while (i < sz) {
+        nte = ntTable + i;
+        i =+ ntTESz;
+
+        kind = nte[2] & NT_K_M;
+        if (kind == NT_ARG | kind == NT_EXT)
+            goto continue;
+
+        var = irIns(entry, I_ALLOC, 1, nte[0]);
+
+        /* Allocate and store the initial value. */
+        value = 0;
+        if (kind == NT_INT)
+            value = irIns(var, I_BLOCK, nte[3]);
+        else if (kind == NT_AUTO & nte[3] >= 0)
+            value = irIns(var, I_ALLOC, nte[3], 0);
+        if (value)
+            irIns(value, I_STORE, var, value);
+
+        /* Replace the dummy instruction. */
+        if (nte[4])
+            irRep(nte[4], var);
+continue:
+        ;
+    }
+
 }

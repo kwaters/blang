@@ -4,8 +4,9 @@
  *
  * Memory layout
  *   [0] Name
- *   [1] firstI
- *   [2] lastI
+ *   [2] pointer to self
+ *   [3] firstI
+ *   [4] lastI
  */
 
 /* Current basic block. */
@@ -15,8 +16,8 @@ bbCur 0;
 bbList 0;
 
 /* Offsets */
-bbFirst 1;
-bbLast 2;
+bbFirst 3;
+bbLast 4;
 
 /* Forget all basic blocks. */
 bbReset() {
@@ -35,13 +36,15 @@ bbGet() {
     extrn getvec;
     auto block;
 
-    block = getvec(2);
+    block = getvec(4);
     vcPush(&bbList, block);
 
     /* Note names start at 1. */
     block[0] = vcSize(bbList);
     block[1] = 0;
-    block[2] = 0;
+    block[2] = block;
+    block[3] = block;
+    block[4] = block;
 
     return (block);
 }
@@ -49,7 +52,7 @@ bbGet() {
 /* Release a basic block. */
 bbRlse(block) {
     extrn rlsevec;
-    rlsevec(block, 2);
+    rlsevec(block, 4);
 }
 
 /* Create a new block, linking in after the current block. */
@@ -88,8 +91,5 @@ bbTermQ(block) {
 
 bbEmpty(block) {
     extrn ice;
-
-    if (!block[1] != !block[2])
-        ice("Inconsistency in instruction linked-list.");
-    return (!block[1]);
+    return (block[1] == block);
 }
