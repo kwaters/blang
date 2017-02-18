@@ -311,10 +311,12 @@ igVar(entry) {
     extrn irIns, irDel, irRep;
     extrn vcSize;
 
-    auto i, sz;
+    auto i, sz, ip;
     auto nte, kind;
     auto var, value;
+    auto insertPt;
 
+    insertPt = entry;
     i = 0;
     sz = vcSize(ntTable);
     while (i < sz) {
@@ -325,7 +327,7 @@ igVar(entry) {
         if (kind == NT_ARG | kind == NT_EXT)
             goto continue;
 
-        var = irIns(entry, I_ALLOC, 1, nte[0]);
+        insertPt = var = irIns(insertPt, I_ALLOC, 1, nte[0]);
 
         /* Allocate and store the initial value. */
         value = 0;
@@ -334,7 +336,7 @@ igVar(entry) {
         else if (kind == NT_AUTO & nte[3] >= 0)
             value = irIns(var, I_ALLOC, nte[3], 0);
         if (value)
-            irIns(value, I_STORE, var, value);
+            insertPt = irIns(value, I_STORE, var, value);
 
         /* Replace the dummy instruction. */
         if (nte[4])
