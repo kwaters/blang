@@ -18,6 +18,7 @@ igFunc(func) {
     extrn irI;
     extrn irTCnt;
     extrn obFmt;
+    extrn cbEmitF;
     auto i, sz, p, v, nte, entry, bb;
 
     ntReset();
@@ -49,6 +50,9 @@ igFunc(func) {
 
     ntCDef();
     igVar(entry);
+
+    cbEmitF(func);
+    return;
 
     /* Print function */
     obFmt("[2:name]:*n", func);

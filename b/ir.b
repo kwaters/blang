@@ -269,8 +269,7 @@ irRepD 0;
 irRep(dst, src)
 {
     extrn irRepS, irRepI, irRepD, irDel;
-    extrn obFmt, vcApply;
-    obFmt("uses={[5:list:t[0.1]]}*n", dst);
+    extrn vcApply;
 
     irRepS = src;
     irRepD = dst;
