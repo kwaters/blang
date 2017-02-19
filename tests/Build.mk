@@ -15,3 +15,7 @@ two_strings += $(D)two_strings.o
 b-programs += argv
 argv :=
 argv := $(D)argv.o
+
+b-programs += strings
+strings :=
+strings := $(D)strings.o
