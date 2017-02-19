@@ -40,6 +40,24 @@ ntReset() {
     vcSSize(&ntTable, 0);
 }
 
+/* Create a nametable iterator */
+ntIter(it) {
+    extrn ntTable;
+    extrn vcSize, ntTESz;
+    it[0] = ntTable;
+    it[1] = ntTable + vcSize(ntTable);
+}
+
+ntNext(it) {
+    extrn ntTESz;
+    auto ret;
+    if (it[0] >= it[1])
+        return (0);
+    ret = it[0];
+    it[0] =+ ntTESz;
+    return (ret);
+}
+
 /* Lookup a name.
  *
  * Never returns 0.

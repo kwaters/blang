@@ -18,7 +18,6 @@ igFunc(func) {
     extrn irI;
     extrn irTCnt;
     extrn obFmt;
-    extrn cbEmitF;
     auto i, sz, p, v, nte, entry, bb;
 
     ntReset();
@@ -50,25 +49,6 @@ igFunc(func) {
 
     ntCDef();
     igVar(entry);
-
-    cbEmitF(func);
-    return;
-
-    /* Print function */
-    obFmt("[2:name]:*n", func);
-
-    sz = vcSize(bbList);
-    i = 0;
-    while (i < sz) {
-        printf("BB%d:*n", bbList[i][0]);
-        bb = bbList[i++];
-        p = bb[3];
-        while (p != bb) {
-            printf("  ");
-            irShow(p);
-            p = p[3];
-        }
-    }
 }
 
 igCaseT 0;

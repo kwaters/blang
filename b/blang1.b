@@ -80,6 +80,7 @@ main() {
     extrn yMain;
     extrn mPArgs, optInp, optDTok, optDAst, optDLR;
     extrn lrPass;
+    extrn cbEmitP;
 
     extrn stShow, stRlseR;
 
@@ -115,14 +116,7 @@ main() {
         exit();
     }
 
-    i = 0;
-    sz = vcSize(program[2]);
-    while (i < sz) {
-        if (program[2][i][0] == A_FDEF)
-            igFunc(program[2][i]);
-        i++;
-    }
-
+    cbEmitP(program);
 
     stRlseR(program);
 }
