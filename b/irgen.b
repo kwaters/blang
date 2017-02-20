@@ -250,24 +250,25 @@ igNode(pnode) {
         return (irI(I_BIN, n[4], igNode(&n[2]), igNode(&n[3])));
 
     case 27:  /* A_COND */
-        v = igNode(&n[2]);
+        args = vcGetR(4);
+        vcSSize(&args, 4);
 
-        yes = bbGet();
-        no = bbGet();
+        v = igNode(&n[2]);
+        args[1] = yes = bbGet();
+        args[3] = no = bbGet();
         exit = bbGet();
         irI(I_IF, v, yes, no);
 
         bbCur = yes;
-        yesV = igNode(&n[3]);
+        args[0] = igNode(&n[3]);
         irI(I_J, exit);
 
         bbCur = no;
-        noV = igNode(&n[4]);
+        args[2] = igNode(&n[4]);
         irI(I_J, exit);
 
         bbCur = exit;
-        /* TODO(kwaters): push in a vector instead of being cute. */
-        return (irI(I_PHI, yesV, yes, noV, no, 0));
+        return (irI(I_PHI, args));
 
     case 28:  /* A_CALL */
         v = igNode(&n[2]);

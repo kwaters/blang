@@ -7,19 +7,22 @@
  *   [2] pointer to self
  *   [3] firstI
  *   [4] lastI
+ *
+ * Basic blocks contain a doubly linked circular list of instructions, with the
+ * BB serving as a sentinal.
  */
-
-/* Current basic block. */
-bbCur 0;
-
-/* List of basic blocks. */
-bbList 0;
 
 /* Offsets */
 bbFirst 3;
 bbLast 4;
 
-/* Forget all basic blocks. */
+/* Vector of all basic blocks. */
+bbList 0;
+
+/* Current basic block. */
+bbCur 0;
+
+/* Release all basic blocks. */
 bbReset() {
     extrn bbList;
     extrn vcGet, vcSSize;
@@ -49,12 +52,6 @@ bbGet() {
     return (block);
 }
 
-/* Release a basic block. */
-bbRlse(block) {
-    extrn rlsevec;
-    rlsevec(block, 4);
-}
-
 /* Create a new block, linking in after the current block. */
 bbSplit() {
     extrn I_J;
@@ -74,22 +71,7 @@ bbSplit() {
     return (block);
 }
 
-/* Is the specified block terminated. */
-bbTermQ(block) {
-    extrn I_J, I_SWTCH;
-    extrn printf;
-    auto inst, kind;
-
-    inst = block[2];
-    printf("BB%d: next=%d prev=%d*n", block[0], block[1], block[2]);
-    if (!inst)
-        return;
-    kind = inst[0];
-    printf("kind=%d*n", kind);
-    return (I_J <= kind & kind <= I_SWTCH);
-}
-
+/* Return true if a basic block contains no instructions. */
 bbEmpty(block) {
-    extrn ice;
     return (block[1] == block);
 }
