@@ -81,15 +81,9 @@ main() {
     extrn mPArgs, optInp, optDTok, optDAst, optDLR;
     extrn lrPass;
     extrn cbEmitP;
-
     extrn stShow, stRlseR;
 
-    auto c;
     auto program;
-
-    extrn A_FDEF;
-    extrn vcSize, igFunc;
-    auto i, sz;
 
     mPArgs();
     ibOpen(optInp);
