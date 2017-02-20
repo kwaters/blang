@@ -9,6 +9,7 @@ blang1 += $(D)ibuffer.o
 blang1 += $(D)ir.o
 blang1 += $(D)lexer.o
 blang1 += $(D)lrvalue.o
+blang1 += $(D)nametabl.o
 blang1 += $(D)obuffer.o
 blang1 += $(D)parser.o
 blang1 += $(D)string.o
