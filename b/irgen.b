@@ -1,76 +1,84 @@
 /* vim: set ft=blang : */
 
+/* Generate IR for a function. */
 igFunc(func) {
     extrn A_FDEF;
-    extrn bbCur;
-    extrn ice;
-    extrn bbGet;
-    extrn igNode, igVar;
-    extrn ntReset;
-    extrn stShow;
-    extrn irShow;
-    extrn ntCDef;
     extrn NT_EXT, NT_ARG;
-
     extrn I_RET, I_UNDEF;
-    extrn vcSize, bbList, printf, bbFirst, bbReset, bbEmpty;
-    extrn ntAdd;
-    extrn irI;
     extrn irTCnt;
-    extrn obFmt;
-    auto i, sz, p, v, nte, entry, bb;
+    extrn bbCur;
 
-    ntReset();
+    extrn ice;
+    extrn bbGet, bbReset;
+    extrn irI;
+    extrn ntReset, ntCDef, ntAdd;
+    extrn vcSize;
+    extrn igNode, igVar;
+
+    auto entry;
+    auto i, sz, args, nte;
+
+    if (func[0] != A_FDEF)
+        ice("Expected function definition.");
+
+    /* Reset names */
     bbReset();
+    ntReset();
     irTCnt = 0;
 
     /* In 9.1 "Users' Reference to B," printn() makes a recursive call
      * without being explicitly imported as an extrn, so it must be
-     * implicitly in the nametable.
-     */
+     * implicitly in the nametable. */
     ntAdd(func[2], func[1], NT_EXT);
 
-    v = func[3];
+    /* Add the arguments of the function to the nametable. */
+    args = func[3];
+    sz = vcSize(args);
     i = 0;
-    sz = vcSize(v);
     while (i < sz) {
-        nte = ntAdd(v[i], func[1], NT_ARG);
+        nte = ntAdd(args[i], func[1], NT_ARG);
         nte[3] = i;
         i++;
     }
 
     entry = bbCur = bbGet();
-
-    if (func[0] != A_FDEF)
-        ice("Expected function definition.");
-
     igNode(&func[4]);
+
+    /* Explicity terminal each function with "return;" */
     irI(I_RET, irI(I_UNDEF));
 
     ntCDef();
     igVar(entry);
 }
 
+/* The case table for the current inner-most switch statement. */
 igCaseT 0;
 
+/* Recursively convert to IR.
+ *
+ * For ast nodes with a "value", returns the instruction representing that
+ * value. */
 igNode(pnode) {
     extrn I_UNDEF, I_PHI, I_NUM, I_STR, I_ARG, I_AUTO, I_EXTRN, I_BLOCK,
           I_BIN, I_UNARY, I_CALL, I_LOAD, I_STORE, I_J, I_CJ, I_RET, I_IF,
           I_SWTCH;
     extrn O_PLUS;
     extrn NT_K_M, NT_ARG, NT_AUTO, NT_INT, NT_EXT;
-    extrn irI;
-    extrn igCaseT;
+    extrn bbCur;
+
+    extrn ice;
     extrn vcGet, vcGetR, vcPush, vcSize, vcSSize;
     extrn stApply;
     extrn ntAdd, ntFetch;
-    extrn bbSplit, bbGet, bbCur, bbTermQ, bbEmpty;
-    extrn ice;
-    extrn printf;
+    extrn irI;
+    extrn bbSplit, bbGet, bbEmpty;
+    extrn igCaseT;
 
-    auto n, nte, block, v, yes, no, exit, body, head, caseT, kind, addr;
-    auto yesB, noB;
-    auto yesV, noV, sz, args, i;
+    auto n, v, addr;
+    auto i, sz, args;
+    auto nte, kind;
+    auto caseT;
+    auto block, exit, body, head, yes, yesB, no, noB;
 
     n = *pnode;
 
@@ -102,6 +110,7 @@ igNode(pnode) {
 
     case  6:  /* A_CLABEL */
         block = bbSplit();
+        /* TODO(kwaters): Is it an error to have a floating case? */
         if (igCaseT) {
             vcPush(&igCaseT, n[3]);
             vcPush(&igCaseT, block);
@@ -184,7 +193,6 @@ igNode(pnode) {
         return (0);
 
     case 11:  /* A_GOTO */
-        /* TODO succ/pred */
         irI(I_CJ, igNode(&n[2]));
         bbCur = bbGet();
         return (0);
@@ -290,31 +298,30 @@ igNode(pnode) {
     ice("Unexpected node");
 }
 
+/* After the function is finished, go back and define variables in the entry
+ * block. */
 igVar(entry) {
     extrn I_ALLOC, I_BLOCK, I_STORE;
-    extrn ntTable, ntTESz, NT_K_M, NT_ARG, NT_EXT, NT_AUTO, NT_INT;
-    extrn irIns, irDel, irRep;
-    extrn vcSize;
+    extrn NT_K_M, NT_ARG, NT_EXT, NT_AUTO, NT_INT;
+    extrn irIns, irRep;
+    extrn ntIter, ntNext;
 
-    auto i, sz, ip;
+    /* TODO: Make this a local. */
+    extrn it;
+
     auto nte, kind;
-    auto var, value;
-    auto insertPt;
+    auto insertPt, var, value;
 
     insertPt = entry;
-    i = 0;
-    sz = vcSize(ntTable);
-    while (i < sz) {
-        nte = ntTable + i;
-        i =+ ntTESz;
 
+    ntIter(it);
+    while (nte = ntNext(it)) {
         kind = nte[2] & NT_K_M;
         if (kind == NT_ARG | kind == NT_EXT)
             goto continue;
 
-        insertPt = var = irIns(insertPt, I_ALLOC, 1, nte[0]);
-
         /* Allocate and store the initial value. */
+        insertPt = var = irIns(insertPt, I_ALLOC, 1, nte[0]);
         value = 0;
         if (kind == NT_INT)
             value = irIns(var, I_BLOCK, nte[3]);
@@ -329,5 +336,4 @@ igVar(entry) {
 continue:
         ;
     }
-
 }
