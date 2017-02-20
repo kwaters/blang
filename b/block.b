@@ -75,3 +75,87 @@ bbSplit() {
 bbEmpty(block) {
     return (block[1] == block);
 }
+
+/* Returns an iterator which iterates over the successors of a block. */
+bbSucc(it, block) {
+    extrn ice;
+    extrn itSeq;
+    extrn bbSCJNxt, bbSwtchN;
+    extrn ntIter;
+    auto term;
+
+    term = block[4];
+    switch (term[0]) {
+    case 14:  /* I_J */
+        it[0] = itSeq;
+        it[1] = &term[6];
+        it[2] = 1;
+        return;
+
+    case 15:  /* I_CJ */
+        ntIter(it);
+        it[0] = bbSCJNxt;
+        return;
+
+    case 16:  /* I_RET */
+        it[0] = itSeq;
+        it[2] = 0;
+        return;
+
+    case 17:  /* I_IF */
+        it[0] = itSeq;
+        it[1] = &term[7];
+        it[2] = 2;
+        return;
+
+    case 18:  /* I_SWTCH */
+        it[0] = bbSwtchN;
+        it[1] = term;
+        it[2] = -1;
+        return;
+    }
+    ice("Block missing terminator.");
+}
+
+next(it) {
+    return (it[0](it));
+}
+
+itSeq(it) {
+    if (it[2] <= 0)
+        return (0);
+    it[2]--;
+    return (*it[1]++);
+}
+
+bbSCJNxt(it) {
+    extrn NT_K_M, NT_INT;
+    extrn ntNext;
+    auto nte;
+    while (nte = ntNext(it)) {
+        if ((nte[2] & NT_K_M) == NT_INT)
+            return (nte[3]);
+    }
+    return (0);
+}
+
+bbSwtchN(it) {
+    extrn vcSize;
+    auto term, vec, ret;
+
+    if (it[2] <= -1) {
+        term = it[1];
+        vec = term[8];
+        it[1] = &vec[1];
+        it[2] = vcSize(vec) / 2;
+        return (term[7]);
+    }
+
+    if (it[2] <= 0)
+        return (0);
+
+    ret = *it[1];
+    it[1] =+ 2;
+    it[2]--;
+    return (ret);
+}

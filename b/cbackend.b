@@ -160,7 +160,7 @@ cbV(inst) {
             obFmt("[]", &s[i++]);
         }
 
-        len =- 8 * sz - 1;
+        len =- 8 * sz + 1;
         while (len >= 0)
             x = x << 8 | char(&s[i], len--);
 
@@ -232,8 +232,10 @@ cbI(inst) {
     extrn I_UNDEF;
     extrn obFmt;
     extrn ice;
+    extrn cbPhiCp;
 
     switch (inst[0]) {
+
     case  1:  /* I_UNDEF */
         return;
 
@@ -286,14 +288,17 @@ cbI(inst) {
         return;
 
     case 14:  /* I_J */
+        cbPhiCp(inst[2]);
         obFmt("    goto BB[6.0];*n", inst);
         return;
 
     case 15:  /* I_CJ */
+        cbPhiCp(inst[2]);
         obFmt("    goto **(void **)t[6.1];*n", inst);
         return;
 
     case 16:  /* I_RET */
+        cbPhiCp(inst[2]);
         if (inst[6][0] == I_UNDEF)
             obFmt("    return 0; /** undef **/*n", inst);
         else
@@ -301,10 +306,12 @@ cbI(inst) {
         return;
 
     case 17:  /* I_IF */
+        cbPhiCp(inst[2]);
         obFmt("    if (t[6.1]) goto BB[7.0]; else goto BB[8.0];*n", inst);
         return;
 
     case 18:  /* I_SWTCH */
+        cbPhiCp(inst[2]);
         obFmt("    switch (t[6.1]) {*n    default: goto BB[7.0];*n[8:rep:    case [0]: goto BB[1.0];*n]    }*n", inst);
         return;
 
@@ -316,4 +323,32 @@ cbI(inst) {
         return;
     }
     ice("Unhandled instruction.");
+}
+
+cbPhiCp(block)
+{
+    extrn bbSucc, next;
+    extrn I_PHI;
+    extrn vcSize;
+    extrn it;
+    extrn obFmt;
+    auto i, sz, succ, phi, vec;
+
+    bbSucc(it, block);
+    while (succ = next(it)) {
+        phi = succ[3];
+        while (phi != succ & phi[0] == I_PHI) {
+            vec = phi[6];
+            i = 0;
+            sz = vcSize(vec);
+            while (i < sz) {
+                if (vec[i + 1] == block) {
+                    obFmt("    phi[1] = ", phi);
+                    obFmt("t[1];*n", vec[i]);
+                }
+                i =+ 2;
+            }
+            phi = phi[3];
+        }
+    }
 }
