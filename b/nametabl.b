@@ -6,9 +6,9 @@
  * [0] Name
  * [1] lineNo of first use
  * [2] flags
- * [3] ARG: #
+ * [3] ARG: argument number
  *     INTERNAL: block
- * [4] "instruction" in the entry block
+ * [4] "instruction" defining the address of this name in the entry block
  */
 
 /* The nametable */
@@ -29,7 +29,7 @@ NT_NO_S 8;  /* Never stored to bit */
 
 /* Empty the nametable.
  *
- * The nametable is one level, and cleared between functions. */
+ * The nametable is one level and cleared between functions. */
 ntReset() {
     extrn ntTable, ntTESz;
     extrn vcGetR, vcSSize;
@@ -48,6 +48,7 @@ ntIter(it) {
     it[1] = ntTable + vcSize(ntTable);
 }
 
+/* Iterate a nametable iterator */
 ntNext(it) {
     extrn ntTESz;
     auto ret;
@@ -60,14 +61,14 @@ ntNext(it) {
 
 /* Lookup a name.
  *
- * Never returns 0.
+ * Never returns 0.  If a name is not in the nametable it's incerted as an
+ * undefined INT name.
  */
 ntFetch(name, lineNo) {
     extrn ntTESz, ntTable, NT_INT;
     extrn vcSize, vcSSize;
     extrn ntFetchI;
     auto p, sz;
-    extrn printf;
 
     if (p = ntFetchI(name))
         return (p);
@@ -107,6 +108,7 @@ ntCDef() {
     extrn error;
     auto i, sz, nte;
 
+    /* TODO(kwaters): Switch to ntIter. */
     i = 0;
     sz = vcSize(ntTable);
     while (i < sz) {
@@ -126,23 +128,23 @@ ntAdd(name, lineNo, kind) {
     extrn ntTESz, ntTable, NT_DEF, NT_INT, NT_K_M;
     extrn error;
     extrn vcSize, vcSSize;
-    auto p, sz;
-    extrn printf;
+    auto nte, sz;
+    extrn nterintf;
 
-    if (p = ntFetchI(name)) {
-        if ((p[2] & NT_DEF) | (p[2] & NT_K_M) != NT_INT)
+    if (nte = ntFetchI(name)) {
+        if ((nte[2] & NT_DEF) != 0 | (nte[2] & NT_K_M) != NT_INT)
             error("rd", name, lineNo);
-        p[2] =| NT_DEF;
-        return (p);
+        nte[2] =| NT_DEF;
+        return (nte);
     }
 
     sz = vcSize(ntTable);
     vcSSize(&ntTable, sz + ntTESz);
-    p = ntTable + sz;
-    p[0] = name;
-    p[1] = lineNo;
-    p[2] = kind | NT_DEF;
-    p[3] = 0;
-    p[4] = 0;
-    return (p);
+    nte = ntTable + sz;
+    nte[0] = name;
+    nte[1] = lineNo;
+    nte[2] = kind | NT_DEF;
+    nte[3] = 0;
+    nte[4] = 0;
+    return (nte);
 }
