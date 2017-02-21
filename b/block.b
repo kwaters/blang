@@ -117,10 +117,12 @@ bbSucc(it, block) {
     ice("Block missing terminator.");
 }
 
+/* Advance an iterator.  Returns (0) on exhaustion. */
 next(it) {
     return (it[0](it));
 }
 
+/* Next for sequeces of vector values. */
 itSeq(it) {
     if (it[2] <= 0)
         return (0);
@@ -128,10 +130,13 @@ itSeq(it) {
     return (*it[1]++);
 }
 
+/* Basic block successor CJ next. */
 bbSCJNxt(it) {
     extrn NT_K_M, NT_INT;
     extrn ntNext;
     auto nte;
+
+    /* Computed jump can jump to any label in the function. */
     while (nte = ntNext(it)) {
         if ((nte[2] & NT_K_M) == NT_INT)
             return (nte[3]);
@@ -139,10 +144,12 @@ bbSCJNxt(it) {
     return (0);
 }
 
+/* Basic block successor switch next. */
 bbSwtchN(it) {
     extrn vcSize;
     auto term, vec, ret;
 
+    /* Default first */
     if (it[2] <= -1) {
         term = it[1];
         vec = term[8];
@@ -151,6 +158,7 @@ bbSwtchN(it) {
         return (term[7]);
     }
 
+    /* Exhaustion */
     if (it[2] <= 0)
         return (0);
 
