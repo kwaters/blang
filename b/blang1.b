@@ -80,10 +80,9 @@ main() {
     extrn yMain;
     extrn mPArgs, optInp, optDTok, optDAst, optDLR;
     extrn lrPass;
+    extrn cbEmitP;
+    extrn stShow, stRlseR;
 
-    extrn f, stShow, stRlseR;
-
-    auto c;
     auto program;
 
     mPArgs();
@@ -110,6 +109,8 @@ main() {
         stShow(program);
         exit();
     }
+
+    cbEmitP(program);
 
     stRlseR(program);
 }

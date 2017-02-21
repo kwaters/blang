@@ -69,8 +69,8 @@ obFmtI(fmt, start, object, maxFP) {
 obSFmt(fmt, p, x, maxFP) {
     extrn char, ice;
     extrn printf;
-    extrn obPutc, obCmpS, obCNum, obCName, obCList, obCGz, obCBOp, obCUOp,
-          obCStr;
+    extrn obPutc, obCmpS, obCNum, obCName, obCCName, obCList, obCGz, obCBOp, obCUOp,
+          obCStr, obCRep, obCCBOp, obCCUOp;
 
     auto object;
     auto cmdS, cmdE, subS;
@@ -162,6 +162,14 @@ close:
         obCStr(fmt, subS, object, x);
     else if (obCmpS("gz", fmt, cmdS, cmdE))
         obCGz(fmt, subS, object, x);
+    else if (obCmpS("rep", fmt, cmdS, cmdE))
+        obCRep(fmt, subS, object, x);
+    else if (obCmpS("cname", fmt, cmdS, cmdE))
+        obCCName(fmt, subS, object, x);
+    else if (obCmpS("cbop", fmt, cmdS, cmdE))
+        obCCBOp(fmt, subS, object, x);
+    else if (obCmpS("cuop", fmt, cmdS, cmdE))
+        obCCUOp(fmt, subS, object, x);
     else
         ice("Unrecognized command");
 
@@ -200,6 +208,21 @@ obCList(fmt, subS, x, top) {
     }
 }
 
+obCRep(fmt, subS, x, top) {
+    extrn vcSize;
+    extrn obFmtI;
+    extrn printf;
+    auto i, sz, maxFP;
+
+    maxFP = 0;
+    i = 0;
+    sz = vcSize(x);
+    while (i < sz) {
+        obFmtI(fmt, subS, x + i, &maxFP);
+        i =+ maxFP + 1;
+    }
+}
+
 obCGz(fmt, subS, x, top) {
     extrn obFmtI;
     if (x > 0)
@@ -217,6 +240,35 @@ obCName(fmt, subS, name, top) {
     while (name) {
         obPutc(name & 0377);
         name =>> 8;
+    }
+}
+
+obCCName(fmt, subS, name, top) {
+    extrn obPutc;
+    extrn char;
+    auto c, i;
+
+    obPutc('B');
+    while ((c = (char(fmt, subS++))) != ']')
+        obPutc(c);
+
+    /* Escapes */
+    i = 0;
+    while (i < 8) {
+        c = (name >> (8 * i)) & 0377;
+        if (c == '.')
+            obPutc('a' + i);
+        i++;
+    }
+    obPutc('_');
+
+    while (name) {
+        c = name & 0377;
+        name =>> 8;
+        if (c == '.')
+            obPutc('_');
+        else
+            obPutc(c);
     }
 }
 
@@ -248,6 +300,34 @@ obCBOp(fmt, subS, op, top) {
     ice("Unknown binary operation");
 }
 
+
+obCCBOp(fmt, subS, op, top) {
+    extrn printf, char, ice;
+
+    if (char(fmt, subS) != ']')
+        ice("Unexpected sub format");
+
+    /* TODO(kwaters): Is this better done with a table? */
+    switch (op) {
+    case  1: printf("|");  return;
+    case  2: printf("&");  return;
+    case  3: printf("=="); return;
+    case  4: printf("!="); return;
+    case  5: printf("<");  return;
+    case  6: printf("<="); return;
+    case  7: printf(">");  return;
+    case  8: printf(">="); return;
+    case  9: printf("<<"); return;
+    case 10: printf(">>"); return;
+    case 11: printf("-");  return;
+    case 12: printf("+");  return;
+    case 13: printf("%");  return;
+    case 14: printf("**"); return;
+    case 15: printf("/");  return;
+    }
+    ice("Unknown binary operation");
+}
+
 obCUOp(fmt, subS, op, top) {
     extrn printf, char, ice;
 
@@ -258,6 +338,20 @@ obCUOp(fmt, subS, op, top) {
     switch(op) {
     case  1: printf("NEG"); return;
     case  2: printf("NOT"); return;
+    }
+    ice("Unknown unary operation");
+}
+
+obCCUOp(fmt, subS, op, top) {
+    extrn printf, char, ice;
+
+    if (char(fmt, subS) != ']')
+        ice("Unexpected sub format");
+
+    /* TODO(kwaters): Is this better done with a table? */
+    switch(op) {
+    case  1: printf("-"); return;
+    case  2: printf("!"); return;
     }
     ice("Unknown unary operation");
 }
