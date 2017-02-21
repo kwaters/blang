@@ -3,8 +3,6 @@ blang
 
 A self hosting B compiler.
 
-Originally, I had planned on implementing a B compiler in python targeting a
-VM also written in python.  This attempt is available in the attic/ branches.
+The current compiler targets C, but is planned to target x86-64.
 
-Now, I'm bootstrapping a minimal B to C compiler in C, using a style similar
-to the style I believe will be required in B.
+There is a early C compiler which is able to bootstrap the B compiler.

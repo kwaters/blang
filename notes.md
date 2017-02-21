@@ -1,7 +1,6 @@
 TODO
 ----
-AST dumping for B implementation.
-Command line parsing for blang1.
+Build system for bootstrapping.
 
 Auto arrays.
 
@@ -18,6 +17,8 @@ Performance Optimization
         - bit representation = pointer representation
     - Disadvantages
         - `>>`, `*`, `/`, `%` are all more expensive.
+        - Makes char() painful, only allow 7 characters per word, makes
+          syscalls more difficult.
 - Pass arguments in registers if arguments are only used as rvalues.  We want
   to preserve the behavior of arguments as arrays as shown in the `printf()`
   implementation.
