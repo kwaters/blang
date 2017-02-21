@@ -298,6 +298,9 @@ igNode(pnode) {
     ice("Unexpected node");
 }
 
+/* TODO(kwaters): The current compiler doesn't know how to do vector autos. */
+it[4];
+
 /* After the function is finished, go back and define variables in the entry
  * block. */
 igVar(entry) {

@@ -1,6 +1,9 @@
 /* vim: set ft=blang : */
 
+/* C backend */
 
+/* Emit a translation unit as a C program.
+ * |program| is the AST node for the program. */
 cbEmitP(program) {
     extrn A_FDEF, A_XDEF;
     extrn obFmt;
@@ -11,21 +14,20 @@ cbEmitP(program) {
 
     obFmt("#include *"base.h*"*n");
 
-    i = 0;
     sz = vcSize(program[2]);
+    i = 0;
     while (i < sz) {
-        inst = program[2][i];
+        inst = program[2][i++];
         if (inst[0] == A_FDEF) {
             igFunc(inst);
             cbEmitF(inst);
         } else if (inst[0] == A_XDEF) {
             cbEmitX(inst);
         }
-        i++;
     }
-
 }
 
+/* Emit global declaration */
 cbEmitX(decl) {
     extrn vcSize;
     extrn ice;
@@ -54,14 +56,10 @@ cbEmitX(decl) {
     }
 }
 
+/* Emit function */
 cbEmitF(func) {
-    extrn printf;
     extrn obFmt;
-    extrn bbList;
-    extrn vcSize;
-    extrn cbI, cbFVD, cbPass1, cbPass2;
-    auto i, sz;
-    auto bb, p;
+    extrn cbFVD, cbPass1, cbPass2;
 
     obFmt("I [2:cname:I](I **args)*n{*n", func);
 
@@ -73,17 +71,15 @@ cbEmitF(func) {
     obFmt("I [2:cname] = (I)&[2:cname:I];*n*n", func);
 }
 
-it [4];
-
-/* Function variable declarition */
+/* Function variable declarition
+ *
+ * Scan the nametable emitting locals, internals, and extern declarations. */
 cbFVD() {
     extrn NT_K_M;
+    extrn it;
     extrn ntIter, ntNext;
     extrn obFmt;
-    extrn it;
-    extrn printf;
-    auto nte;
-    auto kind;
+    auto nte, kind;
 
     ntIter(it);
     while (nte = ntNext(it)) {
@@ -104,8 +100,13 @@ break:
     }
 }
 
+/* Maximum number of arguments in a call in the current function. */
 cbMaxA;
 
+/* First pass.
+ *
+ * Scan the function declaring a local for each instruction, string, and phi
+ * node. */
 cbPass1() {
     extrn vcSize;
     extrn bbList;
@@ -127,51 +128,30 @@ cbPass1() {
         }
     }
 
+    /* Declare arguments array. */
     obFmt("    I carg[:lb][][:rb];*n    I **p;*n", &cbMaxA);
 }
 
+/* Emit variable declaration */
 cbV(inst) {
-    extrn obFmt, char;
-    extrn ice;
     extrn cbMaxA;
-    extrn vcSize;
 
-    auto s, len, x, i, sz, comma;
+    extrn char;
+    extrn ice;
+    extrn vcSize;
+    extrn obFmt;
+    extrn cbStr;
+
+    auto sz;
 
     switch (inst[0]) {
     case  2:  /* I_PHI */
+        /* phi nodes need an extra variable for SSA destruction. */
         obFmt("    I phi[1];*n", inst);
         goto decl;
 
     case  4:  /* I_STR */
-        s = inst[6];
-        len = inst[7];
-        sz = len / 8;
-        comma = 0;
-        x = 0;
-        i = 0;
-
-        obFmt("    static const I str[1][:lb][:rb] = { ", inst);
-        while (i < sz) {
-            if (comma)
-                obFmt(", ");
-            else
-                comma = 1;
-            obFmt("[]", &s[i++]);
-        }
-
-        len =- 8 * sz + 1;
-        while (len >= 0)
-            x = x << 8 | char(&s[i], len--);
-
-        /* Strings are *e terminated so x cannot be zero unless the string is a
-         * multiple of 8 characters long. */
-        if (x) {
-            if (comma)
-                obFmt(", ");
-            obFmt("[]", &x);
-        }
-        obFmt(" };*n");
+        cbStr(inst);
         goto decl;
 
     case 11:  /* I_CALL */
@@ -206,6 +186,50 @@ decl:
     obFmt("    I t[1];*n", inst);
 }
 
+/* Emit the declaration for a constant string. */
+cbStr(inst) {
+    extrn char;
+    extrn obFmt;
+
+    auto s, len;
+    auto i, x, sz, comma;
+
+    s = inst[6];
+    len = inst[7];
+
+    obFmt("    static const I str[1][:lb][:rb] = { ", inst);
+
+    /* Emit full words */
+    comma = 0;
+    sz = len / 8;
+    i = 0;
+    while (i < sz) {
+        if (comma)
+            obFmt(", ");
+        else
+            comma = 1;
+        obFmt("[]", &s[i++]);
+    }
+
+    /* Build final partial word */
+    x = 0;
+    len =- 8 * sz + 1;
+    while (len >= 0)
+        x = x << 8 | char(&s[i], len--);
+
+    /* Strings are *e terminated so x cannot be zero unless the string is a
+     * multiple of 8 characters long. */
+    if (x) {
+        if (comma)
+            obFmt(", ");
+        obFmt("[]", &x);
+    }
+    obFmt(" };*n");
+}
+
+/* Second pass.
+ *
+ * Emit instructions. */
 cbPass2() {
     extrn vcSize;
     extrn bbList;
@@ -223,11 +247,10 @@ cbPass2() {
             cbI(p);
             p = p[3];
         }
-
-        /* TODO(kwaters): PHI copies. */
     }
 }
 
+/* Emit an instruction */
 cbI(inst) {
     extrn I_UNDEF;
     extrn obFmt;
@@ -253,10 +276,6 @@ cbI(inst) {
 
     case  5:  /* I_ARG */
         obFmt("    t[1] = PTOI(&args[:lb][6][:rb]);*n", inst);
-        return;
-
-    case  6:  /* I_AUTO */
-        ice("Unexpected I_AUTO.");
         return;
 
     case  7:  /* I_EXTRN */
@@ -325,13 +344,19 @@ cbI(inst) {
     ice("Unhandled instruction.");
 }
 
+/* Emit phi copies.
+ *
+ * Before the terminator of a basic block, we have to emit copies for each phi
+ * function in every successor block. */
 cbPhiCp(block)
 {
-    extrn bbSucc, next;
     extrn I_PHI;
-    extrn vcSize;
     extrn it;
+
+    extrn bbSucc, next;
+    extrn vcSize;
     extrn obFmt;
+
     auto i, sz, succ, phi, vec;
 
     bbSucc(it, block);
