@@ -44,18 +44,18 @@ ntReset() {
 ntIter(it) {
     extrn ntTable;
     extrn vcSize, ntTESz;
-    it[0] = ntTable;
-    it[1] = ntTable + vcSize(ntTable);
+    it[1] = ntTable;
+    it[2] = ntTable + vcSize(ntTable);
 }
 
 /* Iterate a nametable iterator */
 ntNext(it) {
     extrn ntTESz;
     auto ret;
-    if (it[0] >= it[1])
+    if (it[1] >= it[2])
         return (0);
-    ret = it[0];
-    it[0] =+ ntTESz;
+    ret = it[1];
+    it[1] =+ ntTESz;
     return (ret);
 }
 
