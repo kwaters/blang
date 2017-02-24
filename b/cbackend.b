@@ -9,6 +9,7 @@ cbEmitP(program) {
     extrn obFmt;
     extrn vcSize;
     extrn igFunc;
+    extrn cjElim;
     extrn cbEmitF, cbEmitX;
     auto i, sz, inst;
 
@@ -20,6 +21,7 @@ cbEmitP(program) {
         inst = program[2][i++];
         if (inst[0] == A_FDEF) {
             igFunc(inst);
+            cjElim();
             cbEmitF(inst);
         } else if (inst[0] == A_XDEF) {
             cbEmitX(inst);

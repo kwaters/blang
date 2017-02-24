@@ -288,6 +288,7 @@ irRepI(instp)
     extrn irAUse;
     extrn vcSize;
     extrn ice;
+    extrn obFmt;
 
     auto inst, src, dst;
     auto i, sz, vec;
@@ -303,32 +304,32 @@ irRepI(instp)
         sz = vcSize(vec);
         while (i < sz) {
             if (vec[i] == dst)
-                vec[i] = irAUse(src);
+                vec[i] = irAUse(src, inst);
             i =+ 2;
         }
         return;
 
     case  9:  /* I_BIN */
         if (inst[7] == dst)
-            inst[7] = irAUse(src);
+            inst[7] = irAUse(src, inst);
         if (inst[8] == dst)
-            inst[8] = irAUse(src);
+            inst[8] = irAUse(src, inst);
         return;
 
     case 10:  /* I_UNARY */
         if (inst[7] == dst)
-            inst[7] = irAUse(src);
+            inst[7] = irAUse(src, inst);
         return;
 
     case 11:  /* I_CALL */
         if (inst[6] == dst)
-            inst[6] = irAUse(src);
+            inst[6] = irAUse(src, inst);
         vec = inst[7];
         i = 0;
         sz = vcSize(vec);
         while (i < sz) {
             if (vec[i] == dst)
-                vec[i] = irAUse(src);
+                vec[i] = irAUse(src, inst);
             i++;
         }
         return;
@@ -339,14 +340,14 @@ irRepI(instp)
     case 17:  /* I_IF */
     case 18:  /* I_SWTCH */
         if (inst[6] == dst)
-            inst[6] = irAUse(src);
+            inst[6] = irAUse(src, inst);
         return;
 
     case 13:  /* I_STORE */
         if (inst[6] == dst)
-            inst[6] = irAUse(src);
+            inst[6] = irAUse(src, inst);
         if (inst[7] == dst)
-            inst[7] = irAUse(src);
+            inst[7] = irAUse(src, inst);
         return;
 
     }

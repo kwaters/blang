@@ -334,8 +334,10 @@ igVar(entry) {
             insertPt = irIns(value, I_STORE, var, value);
 
         /* Replace the dummy instruction. */
-        if (nte[4])
+        if (nte[4]) {
             irRep(nte[4], var);
+            nte[4] = var;
+        }
 continue:
         ;
     }

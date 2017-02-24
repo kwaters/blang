@@ -6,6 +6,7 @@ blang1 += $(D)ast.o
 blang1 += $(D)blang1.o
 blang1 += $(D)block.o
 blang1 += $(D)cbackend.o
+blang1 += $(D)cjelim.o
 blang1 += $(D)ibuffer.o
 blang1 += $(D)ir.o
 blang1 += $(D)irgen.o
